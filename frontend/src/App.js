@@ -1,53 +1,48 @@
-import { useEffect } from "react";
+import React from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import { AppProvider } from "./context/AppContext";
+import { WindowChrome } from "./components/WindowChrome";
+import { Sidebar } from "./components/Sidebar";
+import { StatusBar } from "./components/StatusBar";
+import Dashboard from "./pages/Dashboard";
+import MTKService from "./pages/MTKService";
+import QualcommService from "./pages/QualcommService";
+import IPhoneService from "./pages/IPhoneService";
+import Logs from "./pages/Logs";
+import Pricing from "./pages/Pricing";
+import Settings from "./pages/Settings";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
-
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
-
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
+function Shell() {
   return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
+    <div className="h-screen w-screen flex flex-col bg-black text-white overflow-hidden">
+      <WindowChrome />
+      <div className="flex-1 flex min-h-0">
+        <Sidebar />
+        <main className="flex-1 min-w-0 bg-[#040405] bg-noise overflow-hidden">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/mtk" element={<MTKService />} />
+            <Route path="/qualcomm" element={<QualcommService />} />
+            <Route path="/iphone" element={<IPhoneService />} />
+            <Route path="/logs" element={<Logs />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </main>
+      </div>
+      <StatusBar />
     </div>
   );
-};
+}
 
 function App() {
   return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </div>
+    <BrowserRouter>
+      <AppProvider>
+        <Shell />
+      </AppProvider>
+    </BrowserRouter>
   );
 }
 

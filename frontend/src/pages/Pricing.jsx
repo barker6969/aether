@@ -1,0 +1,245 @@
+import React from "react";
+import { useApp } from "../context/AppContext";
+import { Check, Coins, Crown, Zap, ShieldOff, Hash, Smartphone as SmartphoneIcon, Lock } from "lucide-react";
+
+const PLAN = {
+  name: "Solo Builder Edition",
+  price: "$89",
+  cycle: "/year",
+  tagline: "For independent technicians and small-shop builders.",
+  features: [
+    "Unlimited device scans (MTK / Qualcomm / iPhone)",
+    "Standard FRP bypass — included free",
+    "Full session logs + audit export",
+    "Exploit DB updates for 12 months",
+    "Single-seat license · 2 active devices",
+    "Email support (48h response)",
+  ],
+};
+
+const SERVICES = [
+  {
+    key: "frp",
+    name: "Standard FRP",
+    cost: "FREE",
+    cost_value: 0,
+    icon: ShieldOff,
+    desc: "Factory Reset Protection bypass for MTK & Qualcomm devices on stock firmware.",
+    free: true,
+    testid: "service-frp",
+  },
+  {
+    key: "imei",
+    name: "IMEI Repair",
+    cost: "5 Credits",
+    cost_value: 5,
+    icon: Hash,
+    desc: "Restore or rewrite IMEI/MEID on modem partition. Includes Luhn checksum validation.",
+    testid: "service-imei",
+  },
+  {
+    key: "kg_suspend",
+    name: "Samsung KG Suspend",
+    cost: "15 Credits",
+    cost_value: 15,
+    icon: Lock,
+    desc: "Suspend Knox Guard / Carrier Lock on Samsung devices via privileged token push.",
+    testid: "service-kg",
+  },
+  {
+    key: "iphone_diag",
+    name: "iPhone Modern Diagnostic",
+    cost: "20 Credits",
+    cost_value: 20,
+    icon: SmartphoneIcon,
+    desc: "Full hardware fingerprint, Activation Lock probe & SoC trust-cache audit (A12 → A18).",
+    testid: "service-iphone",
+  },
+];
+
+export default function Pricing() {
+  const { credits, setCredits, pushLog } = useApp();
+
+  const topUp = (amount) => {
+    setCredits((c) => c + amount);
+    pushLog("SUCCESS", `Account credited with +${amount} credits.`);
+  };
+
+  return (
+    <div data-testid="pricing-page" className="h-full overflow-y-auto p-4 space-y-4">
+      {/* Header */}
+      <div className="bg-[#09090B] border border-white/10 p-5 flex flex-col md:flex-row md:items-center gap-4">
+        <div className="w-12 h-12 border border-[#00FF41]/40 bg-[#00FF41]/5 flex items-center justify-center flex-shrink-0">
+          <Coins className="w-6 h-6 text-[#00FF41]" strokeWidth={1.8} />
+        </div>
+        <div className="flex-1">
+          <h1 className="text-xl font-bold tracking-tight">Pricing & Credits</h1>
+          <p className="font-mono text-[11px] tracking-[0.18em] uppercase text-white/40 mt-1">
+            License plans · pay-as-you-go credit operations
+          </p>
+        </div>
+        <div className="border border-[#00FF41]/40 bg-[#00FF41]/5 px-5 py-3 flex items-center gap-3">
+          <div className="font-mono text-[10px] tracking-[0.25em] uppercase text-white/50">
+            Wallet
+          </div>
+          <div className="text-2xl font-bold text-[#00FF41] font-mono">{credits}</div>
+          <div className="text-[10px] tracking-[0.25em] uppercase text-white/40 font-mono">
+            CR
+          </div>
+        </div>
+      </div>
+
+      {/* Plan card */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <div
+          data-testid="plan-solo"
+          className="bg-[#09090B] border border-[#00FF41]/30 p-6 lg:col-span-1 relative overflow-hidden"
+        >
+          <div className="absolute top-3 right-3 px-2 py-1 bg-[#00FF41]/15 text-[#00FF41] font-mono text-[9px] tracking-[0.25em] uppercase">
+            Current Plan
+          </div>
+          <Crown className="w-7 h-7 text-[#00FF41] mb-4" strokeWidth={1.8} />
+          <div className="font-mono text-[10px] tracking-[0.25em] uppercase text-white/50">
+            License
+          </div>
+          <div className="text-xl font-bold mt-1 tracking-tight">{PLAN.name}</div>
+          <p className="text-xs text-white/50 mt-2">{PLAN.tagline}</p>
+
+          <div className="flex items-baseline gap-1 mt-5">
+            <span className="text-4xl font-bold text-white">{PLAN.price}</span>
+            <span className="text-sm text-white/40">{PLAN.cycle}</span>
+          </div>
+
+          <ul className="mt-5 space-y-2">
+            {PLAN.features.map((f) => (
+              <li key={f} className="flex items-start gap-2 text-xs text-white/70">
+                <Check className="w-3.5 h-3.5 text-[#00FF41] flex-shrink-0 mt-0.5" strokeWidth={2.4} />
+                <span>{f}</span>
+              </li>
+            ))}
+          </ul>
+
+          <button
+            data-testid="plan-renew"
+            className="mt-6 w-full h-10 bg-[#00FF41] hover:bg-[#00CC33] text-black font-mono text-xs tracking-[0.2em] uppercase font-semibold transition-colors"
+          >
+            Renew License
+          </button>
+        </div>
+
+        {/* Services pricing */}
+        <div className="lg:col-span-2 bg-[#09090B] border border-white/10">
+          <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 text-[#00FF41]" strokeWidth={2} />
+              <span className="font-mono text-[10px] tracking-[0.25em] uppercase text-white/70">
+                Pay-per-Operation
+              </span>
+            </div>
+            <span className="font-mono text-[10px] text-white/40">
+              4 services
+            </span>
+          </div>
+
+          <div className="divide-y divide-white/5">
+            {SERVICES.map((s) => {
+              const canAfford = s.free || credits >= s.cost_value;
+              return (
+                <div
+                  key={s.key}
+                  data-testid={s.testid}
+                  className="grid grid-cols-1 md:grid-cols-[auto_1fr_auto_auto] gap-4 px-5 py-4 items-center hover:bg-white/[0.02]"
+                >
+                  <div
+                    className={`w-10 h-10 border flex items-center justify-center ${
+                      s.free
+                        ? "border-[#00FF41]/40 text-[#00FF41] bg-[#00FF41]/5"
+                        : "border-white/15 text-white/70"
+                    }`}
+                  >
+                    <s.icon className="w-4 h-4" strokeWidth={2} />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-white">{s.name}</div>
+                    <div className="font-mono text-[11px] text-white/50 mt-1 leading-snug">
+                      {s.desc}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div
+                      className={`font-mono text-sm font-bold ${
+                        s.free ? "text-[#00FF41]" : "text-white"
+                      }`}
+                    >
+                      {s.cost}
+                    </div>
+                    <div className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/30 mt-0.5">
+                      {s.free ? "Included" : "per execution"}
+                    </div>
+                  </div>
+                  <button
+                    data-testid={`${s.testid}-buy`}
+                    disabled={!canAfford && !s.free}
+                    className={`h-9 px-4 font-mono text-[10px] tracking-[0.2em] uppercase border transition-colors ${
+                      s.free
+                        ? "border-[#00FF41]/30 text-[#00FF41] hover:bg-[#00FF41]/10"
+                        : canAfford
+                          ? "border-white/15 text-white hover:border-[#00FF41]/40 hover:text-[#00FF41]"
+                          : "border-white/10 text-white/30 cursor-not-allowed"
+                    }`}
+                  >
+                    {s.free ? "Use Now" : canAfford ? "Run" : "Need Credits"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Top-up packs */}
+      <div className="bg-[#09090B] border border-white/10">
+        <div className="px-5 py-3 border-b border-white/10 flex items-center gap-2">
+          <Coins className="w-3.5 h-3.5 text-[#00FF41]" strokeWidth={2} />
+          <span className="font-mono text-[10px] tracking-[0.25em] uppercase text-white/70">
+            Credit Top-up Packs
+          </span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/5">
+          {[
+            { credits: 50, price: 19, label: "Starter" },
+            { credits: 150, price: 49, label: "Builder", popular: true },
+            { credits: 500, price: 149, label: "Workshop" },
+            { credits: 2000, price: 499, label: "Wholesale" },
+          ].map((pack) => (
+            <div
+              key={pack.credits}
+              className="bg-[#09090B] p-5 flex flex-col gap-3 hover:bg-[#00FF41]/5 transition-colors relative"
+            >
+              {pack.popular && (
+                <span className="absolute top-2 right-2 px-2 py-0.5 bg-[#00FF41]/15 text-[#00FF41] font-mono text-[9px] tracking-[0.2em] uppercase">
+                  Popular
+                </span>
+              )}
+              <div className="font-mono text-[10px] tracking-[0.25em] uppercase text-white/40">
+                {pack.label}
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-bold text-[#00FF41] font-mono">+{pack.credits}</span>
+                <span className="text-xs text-white/40 font-mono">CR</span>
+              </div>
+              <div className="text-sm text-white/70">${pack.price} USD</div>
+              <button
+                data-testid={`topup-${pack.credits}`}
+                onClick={() => topUp(pack.credits)}
+                className="mt-auto h-9 border border-[#00FF41]/30 hover:bg-[#00FF41]/10 text-[#00FF41] font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
+              >
+                Buy Pack
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
