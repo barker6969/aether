@@ -263,8 +263,9 @@ async def signup(payload: SignupRequest, response: Response):
 @api_router.post("/auth/login")
 async def login(payload: LoginRequest, request: Request, response: Response):
     email = payload.email.lower().strip()
-    ip = request.client.host if request.client else "anon"
-    identifier = f"{ip}:{email}"
+    # Use email as the brute-force identifier — request.client.host is the upstream pod
+    # IP in k8s/ingress contexts, which rotates per-request and breaks counter accumulation.
+    identifier = f"email:{email}"
     if await _is_locked(identifier):
         raise HTTPException(status_code=429, detail="Too many failed attempts. Try again in 15 minutes.")
     user = await db.users.find_one({"email": email})
@@ -436,7 +437,19 @@ async def stripe_status(session_id: str, request: Request, user=Depends(get_curr
     host_url = str(request.base_url)
     webhook_url = f"{host_url.rstrip('/')}/api/webhook/stripe"
     sc = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-    s = await sc.get_checkout_status(session_id)
+    try:
+        s = await sc.get_checkout_status(session_id)
+    except Exception as e:
+        logger.warning(f"Stripe status fetch failed for {session_id}: {e}")
+        updated_user = await db.users.find_one({"user_id": user["user_id"]}, {"_id": 0, "password_hash": 0})
+        return {
+            "status": txn.get("status", "unknown"),
+            "payment_status": txn.get("payment_status", "pending"),
+            "amount_total": int(float(txn.get("amount", 0)) * 100),
+            "currency": txn.get("currency", "usd"),
+            "user": public_user(updated_user) if updated_user else None,
+            "warning": "Live status temporarily unavailable. Webhook will reconcile shortly.",
+        }
     new_payment_status = s.payment_status
     new_status = s.status
     # Idempotent fulfillment

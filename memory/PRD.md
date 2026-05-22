@@ -40,3 +40,11 @@ EVERYTHING is MOCKED — there is no real device interaction, no real bypass / r
 - Download Aether CLI button in Window Chrome top bar + iPhone Service header → popover with one-line install, 6 native build targets, generates real shell stub download
 - iPhone Service header rebranded with Aether logo overlay + "AETHER NATIVE" badge + large faded watermark
 - Dashboard layout restructured: stats → device/info/actions row → CloudExploitDB (5/12) + Console (7/12)
+
+## Auth + Stripe + Docs (Feb 2026)
+- Backend (`/app/backend/server.py`): JWT email/password auth + Emergent Google OAuth session exchange + Stripe Checkout (real test-mode via emergentintegrations) + webhook + brute-force lockout (email-keyed for k8s safety) + admin auto-seed
+- Endpoints: /api/auth/{signup,login,logout,me,session}, /api/stripe/{pricing,checkout,status/{id}}, /api/webhook/stripe
+- Frontend: Login + Signup pages (Google + email/password), AuthCallback (hash-fragment race-safe), ProtectedRoute, UserProfile popover (member since, plan, provider, credits, sign out), BuyCreditsModal (2 plans + 4 packs all wired to Stripe), DocsHub + DocArticle (3 markdown guides — Samsung KG / MTK FRP / Qualcomm IMEI rendered via react-markdown), Terms + Privacy pages, Footer with ToS/Privacy/Docs links
+- Test creds: admin@aether.dev / aether_admin_2026 (founding_builder, 5000 credits)
+- Bugs fixed post-test: brute-force lockout (was using k8s pod IP, now email-only), Stripe status (was 500ing, now graceful fallback to cached txn state)
+- KNOWN LIMITATION: Stripe status fetch via emergentintegrations SDK hits api.stripe.com directly which doesn't know about Emergent-proxy sessions — fulfilment relies on the /api/webhook/stripe webhook firing. UI gracefully shows pending with warning until webhook reconciles.

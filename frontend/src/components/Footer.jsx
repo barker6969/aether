@@ -13,17 +13,17 @@ export const Footer = () => {
         <span className="text-white/20">·</span>
         <span className="hidden md:inline">For licensed technicians</span>
       </div>
-      <nav className="flex items-center gap-4">
-        <Link data-testid="footer-docs" to="/docs" className="hover:text-[#00FF41] transition-colors">
+      <nav className="flex items-center gap-3">
+        <Link data-testid="footer-docs" to="/docs" className="hover:text-[#00FF41] transition-colors normal-case tracking-wider">
           Docs
         </Link>
         <span className="text-white/20">·</span>
-        <Link data-testid="footer-terms" to="/terms" className="hover:text-[#00FF41] transition-colors">
-          Terms of Service
+        <Link data-testid="footer-terms" to="/terms" className="hover:text-[#00FF41] transition-colors normal-case tracking-wider">
+          Terms
         </Link>
         <span className="text-white/20">·</span>
-        <Link data-testid="footer-privacy" to="/privacy" className="hover:text-[#00FF41] transition-colors">
-          Privacy Policy
+        <Link data-testid="footer-privacy" to="/privacy" className="hover:text-[#00FF41] transition-colors normal-case tracking-wider">
+          Privacy
         </Link>
       </nav>
     </footer>
