@@ -30,9 +30,14 @@ const maskIMEI = (imei) => imei.slice(0, 4) + " ****** " + imei.slice(-3);
 
 const randomSerial = () => "R9F" + randomHex(8);
 
+const pickDevicePool = (chipset) => {
+  if (chipset === "MTK") return MTK_DEVICES;
+  if (chipset === "QC") return QC_DEVICES;
+  return Math.random() < 0.5 ? MTK_DEVICES : QC_DEVICES;
+};
+
 export const generateDevice = (chipset = "auto") => {
-  const pool =
-    chipset === "MTK" ? MTK_DEVICES : chipset === "QC" ? QC_DEVICES : Math.random() < 0.5 ? MTK_DEVICES : QC_DEVICES;
+  const pool = pickDevicePool(chipset);
   const base = pool[Math.floor(Math.random() * pool.length)];
   const imei = randomIMEI();
   const imei2 = randomIMEI();

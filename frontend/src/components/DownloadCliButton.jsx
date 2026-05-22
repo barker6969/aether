@@ -42,8 +42,10 @@ export const DownloadCliButton = ({ variant = "compact" }) => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
     } catch (e) {
-      // Clipboard API blocked (e.g. non-secure context). Non-fatal — user can copy manually.
-      console.warn("Clipboard write blocked:", e?.message || e);
+      if (process.env.NODE_ENV === "development") {
+        // Clipboard API blocked (e.g. non-secure context). Non-fatal — user can copy manually.
+        console.warn("Clipboard write blocked:", e?.message || e);
+      }
     }
   };
 

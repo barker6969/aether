@@ -70,8 +70,10 @@ export const AuthProvider = ({ children }) => {
     try {
       await http.post("/auth/logout");
     } catch (e) {
-      // Server unavailable or already-expired session — proceed to clear local state.
-      console.warn("Logout request failed; clearing local state anyway.", e?.response?.status || e?.message);
+      if (process.env.NODE_ENV === "development") {
+        // Server unavailable or already-expired session — proceed to clear local state.
+        console.warn("Logout request failed; clearing local state anyway.", e?.response?.status || e?.message);
+      }
     }
     setUser(false);
   };
