@@ -207,3 +207,114 @@ code,
     pointer-events: none;
     animation: scan-line 6s linear infinite;
 }
+
+/* Markdown article styling — Aether Academy */
+.aether-markdown h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.02em;
+    margin: 0 0 1rem 0;
+}
+.aether-markdown h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #fff;
+    margin: 2rem 0 0.75rem 0;
+    border-left: 2px solid #00ff41;
+    padding-left: 0.75rem;
+}
+.aether-markdown h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #f8fafc;
+    margin: 1.25rem 0 0.5rem 0;
+}
+.aether-markdown p {
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.65;
+    margin: 0.75rem 0;
+    font-size: 0.875rem;
+}
+.aether-markdown ul,
+.aether-markdown ol {
+    color: rgba(255, 255, 255, 0.75);
+    padding-left: 1.5rem;
+    margin: 0.75rem 0;
+    font-size: 0.875rem;
+}
+.aether-markdown li {
+    margin: 0.25rem 0;
+    line-height: 1.6;
+}
+.aether-markdown li::marker {
+    color: #00ff41;
+}
+.aether-markdown blockquote {
+    border-left: 2px solid #00ff41;
+    background: rgba(0, 255, 65, 0.04);
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.85rem;
+}
+.aether-markdown code {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #00ff41;
+    padding: 0.1rem 0.35rem;
+    font-size: 0.78rem;
+    border-radius: 2px;
+}
+.aether-markdown pre {
+    background: #050505;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+    overflow-x: auto;
+    font-size: 0.78rem;
+}
+.aether-markdown pre code {
+    background: transparent;
+    border: 0;
+    color: #00ff41;
+    padding: 0;
+    font-size: 0.78rem;
+}
+.aether-markdown table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+    font-size: 0.82rem;
+}
+.aether-markdown th,
+.aether-markdown td {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+}
+.aether-markdown th {
+    background: rgba(0, 255, 65, 0.05);
+    color: #00ff41;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+.aether-markdown strong {
+    color: #fff;
+    font-weight: 600;
+}
+.aether-markdown a {
+    color: #00ff41;
+    text-decoration: underline;
+    text-decoration-color: rgba(0, 255, 65, 0.4);
+}
+.aether-markdown a:hover {
+    text-decoration-color: #00ff41;
+}
+.aether-markdown hr {
+    border: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 1.5rem 0;
+}
