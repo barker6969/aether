@@ -41,8 +41,9 @@ export const DownloadCliButton = ({ variant = "compact" }) => {
       await navigator.clipboard.writeText(installCmd);
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
-    } catch {
-      /* clipboard blocked — ignore */
+    } catch (e) {
+      // Clipboard API blocked (e.g. non-secure context). Non-fatal — user can copy manually.
+      console.warn("Clipboard write blocked:", e?.message || e);
     }
   };
 

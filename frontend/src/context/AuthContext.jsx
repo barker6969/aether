@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -69,8 +69,9 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await http.post("/auth/logout");
-    } catch {
-      /* ignore */
+    } catch (e) {
+      // Server unavailable or already-expired session — proceed to clear local state.
+      console.warn("Logout request failed; clearing local state anyway.", e?.response?.status || e?.message);
     }
     setUser(false);
   };
@@ -86,20 +87,23 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      refresh,
+      syncProfile,
+      loginEmail,
+      signupEmail,
+      exchangeEmergentSession,
+      logout,
+      http,
+    }),
+    [user, loading, refresh, syncProfile]
+  );
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        refresh,
-        syncProfile,
-        loginEmail,
-        signupEmail,
-        exchangeEmergentSession,
-        logout,
-        http,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

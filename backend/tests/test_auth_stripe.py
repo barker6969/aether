@@ -1,6 +1,5 @@
 """Aether backend tests: auth (JWT, signup, login, lockout, logout, me, emergent session) + stripe pricing/checkout/status."""
 import os
-import time
 import uuid
 import pytest
 import requests
@@ -8,8 +7,8 @@ import requests
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://mtk-qualcomm-tool.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
 
-ADMIN_EMAIL = "admin@aether.dev"
-ADMIN_PASSWORD = "aether_admin_2026"
+ADMIN_EMAIL = os.environ.get("AETHER_TEST_ADMIN_EMAIL", "admin@aether.dev")
+ADMIN_PASSWORD = os.environ.get("AETHER_TEST_ADMIN_PASSWORD", "aether_admin_2026")
 
 
 def _new_email():

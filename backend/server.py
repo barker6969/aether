@@ -4,16 +4,16 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# ruff: noqa: E402  (imports intentionally follow load_dotenv per auth playbook)
 import os
 import logging
-import secrets
 import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any
 
 import bcrypt
 import jwt as pyjwt
-from fastapi import FastAPI, APIRouter, Request, Response, HTTPException, Depends, status
+from fastapi import FastAPI, APIRouter, Request, Response, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -437,6 +437,7 @@ async def stripe_status(session_id: str, request: Request, user=Depends(get_curr
     host_url = str(request.base_url)
     webhook_url = f"{host_url.rstrip('/')}/api/webhook/stripe"
     sc = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+    s = None  # silence "possibly unbound" warnings from static analysers
     try:
         s = await sc.get_checkout_status(session_id)
     except Exception as e:
