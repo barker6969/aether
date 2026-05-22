@@ -3,6 +3,8 @@ import { DeviceStatus } from "../components/DeviceStatus";
 import { DeviceInfoPanel } from "../components/DeviceInfoPanel";
 import { ActionGrid } from "../components/ActionGrid";
 import { Console } from "../components/Console";
+import { CloudExploitDB } from "../components/CloudExploitDB";
+import { FoundingBuilderBanner } from "../components/FoundingBuilderBanner";
 import { useApp } from "../context/AppContext";
 import { Activity, Database, ShieldCheck, Wifi } from "lucide-react";
 
@@ -33,7 +35,12 @@ export default function Dashboard() {
   const successCount = logs.filter((l) => l.level === "SUCCESS").length;
 
   return (
-    <div data-testid="dashboard-page" className="h-full flex flex-col gap-3 p-4 overflow-hidden">
+    <div data-testid="dashboard-page" className="h-full flex flex-col gap-3 p-4 overflow-y-auto">
+      {/* Founding Builder CTA */}
+      <div className="flex-shrink-0">
+        <FoundingBuilderBanner />
+      </div>
+
       {/* Top stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-shrink-0">
         <Stat
@@ -64,9 +71,14 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Console */}
-      <div className="flex-1 min-h-0">
-        <Console height="h-full" />
+      {/* Cloud exploit DB + Console */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1 min-h-[480px]">
+        <div className="lg:col-span-5 min-h-[420px]">
+          <CloudExploitDB />
+        </div>
+        <div className="lg:col-span-7 min-h-[420px]">
+          <Console height="h-full" />
+        </div>
       </div>
     </div>
   );

@@ -33,3 +33,10 @@ EVERYTHING is MOCKED — there is no real device interaction, no real bypass / r
 - P1: persist credits + log history to MongoDB
 - P1: real Stripe-based credit top-up
 - P2: dark/light theme toggle, additional chipset DB, multi-language
+
+## Production Finalization (Feb 2026)
+- Cloud Exploit Database panel on Dashboard with live CVE feed (CVE-2026-25262 active, MT6983 BROM fixed, etc.), filter pills, auto-injecting fresh advisories every 9s
+- Founding Builder $299 lifetime CTA banner (dismissible) on Dashboard + dedicated card on Pricing page (animated green-glow border, 6 features, 500 bonus credits on claim)
+- Download Aether CLI button in Window Chrome top bar + iPhone Service header → popover with one-line install, 6 native build targets, generates real shell stub download
+- iPhone Service header rebranded with Aether logo overlay + "AETHER NATIVE" badge + large faded watermark
+- Dashboard layout restructured: stats → device/info/actions row → CloudExploitDB (5/12) + Console (7/12)

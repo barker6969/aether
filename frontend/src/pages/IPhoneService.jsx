@@ -1,7 +1,11 @@
 import React from "react";
 import { Console } from "../components/Console";
+import { DownloadCliButton } from "../components/DownloadCliButton";
 import { useApp } from "../context/AppContext";
 import { Smartphone, AlertTriangle, ShieldCheck, Lock, Activity, Search, Loader2 } from "lucide-react";
+
+const LOGO_URL =
+  "https://static.prod-images.emergentagent.com/jobs/540cc9df-c50a-4a07-a460-6c88ca22b1a7/images/2d4119f8e681e91c440e01928176b55e52818652e44fd72f5f424ba935136d9c.png";
 
 const SUPPORTED = [
   "iPhone XS", "iPhone XR", "iPhone 11", "iPhone 11 Pro", "iPhone SE 2", "iPhone 12",
@@ -34,16 +38,30 @@ export default function IPhoneService() {
 
   return (
     <div data-testid="iphone-page" className="h-full flex flex-col gap-3 p-4 overflow-hidden">
-      <div className="bg-[#09090B] border border-white/10 p-5 flex items-center gap-4 flex-shrink-0">
-        <div className="w-12 h-12 border border-[#00FF41]/40 bg-[#00FF41]/5 flex items-center justify-center">
-          <Smartphone className="w-6 h-6 text-[#00FF41]" strokeWidth={1.8} />
+      <div className="bg-[#09090B] border border-white/10 p-5 flex items-center gap-4 flex-shrink-0 relative overflow-hidden">
+        <div className="absolute -right-10 -top-10 w-44 h-44 opacity-[0.04] pointer-events-none">
+          <img src={LOGO_URL} alt="" className="w-full h-full object-contain" />
         </div>
-        <div className="flex-1">
-          <h1 className="text-xl font-bold tracking-tight">iPhone Service Module</h1>
+        <div className="w-12 h-12 border border-[#00FF41]/40 bg-[#00FF41]/5 flex items-center justify-center relative">
+          <Smartphone className="w-6 h-6 text-[#00FF41]" strokeWidth={1.8} />
+          <img
+            src={LOGO_URL}
+            alt="Aether"
+            className="absolute -top-2 -right-2 w-5 h-5 object-contain bg-black p-0.5 border border-[#00FF41]/40"
+          />
+        </div>
+        <div className="flex-1 relative">
+          <div className="flex items-center gap-2">
+            <h1 data-testid="iphone-page-title" className="text-xl font-bold tracking-tight">iPhone Service Module</h1>
+            <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-[#00FF41] border border-[#00FF41]/40 bg-[#00FF41]/5 px-1.5 py-0.5">
+              AETHER NATIVE
+            </span>
+          </div>
           <p className="font-mono text-[11px] tracking-[0.18em] uppercase text-white/40 mt-1">
             DFU Pipeline · checkm8 / pongoOS · A12 → A18 SoC
           </p>
         </div>
+        <DownloadCliButton variant="compact" />
         <div className="text-right">
           <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/40">Wallet</div>
           <div className="text-sm font-semibold text-[#00FF41]">{credits} Credits</div>

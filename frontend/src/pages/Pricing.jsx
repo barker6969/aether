@@ -1,6 +1,6 @@
 import React from "react";
 import { useApp } from "../context/AppContext";
-import { Check, Coins, Crown, Zap, ShieldOff, Hash, Smartphone as SmartphoneIcon, Lock } from "lucide-react";
+import { Check, Coins, Crown, Zap, ShieldOff, Hash, Smartphone as SmartphoneIcon, Lock, Sparkles, Infinity as InfinityIcon } from "lucide-react";
 
 const PLAN = {
   name: "Solo Builder Edition",
@@ -89,13 +89,64 @@ export default function Pricing() {
         </div>
       </div>
 
-      {/* Plan card */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      {/* Plan cards row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Founding Builder — limited lifetime tier */}
+        <div
+          data-testid="plan-founding-builder"
+          className="bg-[#09090B] border border-[#00FF41] p-6 relative overflow-hidden animate-pulse-glow"
+        >
+          <div className="absolute top-3 right-3 px-2 py-1 bg-[#00FF41] text-black font-mono text-[9px] tracking-[0.25em] uppercase font-semibold flex items-center gap-1">
+            <Sparkles className="w-3 h-3" />
+            Limited · 100 seats
+          </div>
+          <InfinityIcon className="w-7 h-7 text-[#00FF41] mb-4" strokeWidth={1.8} />
+          <div className="font-mono text-[10px] tracking-[0.25em] uppercase text-[#00FF41]">
+            Founding Builder
+          </div>
+          <div className="text-xl font-bold mt-1 tracking-tight text-white">Lifetime Access</div>
+          <p className="text-xs text-white/60 mt-2">
+            One-time payment. All current and future modules — forever.
+          </p>
+
+          <div className="flex items-baseline gap-2 mt-5">
+            <span className="text-4xl font-bold text-[#00FF41] font-mono">$299</span>
+            <span className="text-sm text-white/30 line-through font-mono">$890</span>
+          </div>
+          <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-white/40 mt-1">
+            One time · no recurring
+          </div>
+
+          <ul className="mt-5 space-y-2">
+            {[
+              "Everything in Solo Builder",
+              "All future modules included",
+              "500 starter credits",
+              "Priority CVE feed access",
+              "Founding member Discord",
+              "Lifetime CLI updates",
+            ].map((f) => (
+              <li key={f} className="flex items-start gap-2 text-xs text-white/80">
+                <Check className="w-3.5 h-3.5 text-[#00FF41] flex-shrink-0 mt-0.5" strokeWidth={2.4} />
+                <span>{f}</span>
+              </li>
+            ))}
+          </ul>
+
+          <button
+            data-testid="founding-builder-pricing-cta"
+            className="mt-6 w-full h-11 bg-[#00FF41] hover:bg-[#00CC33] text-black font-mono text-xs tracking-[0.22em] uppercase font-bold transition-colors flex items-center justify-center gap-2"
+          >
+            <Zap className="w-3.5 h-3.5" />
+            Claim Lifetime Seat
+          </button>
+        </div>
+
         <div
           data-testid="plan-solo"
-          className="bg-[#09090B] border border-[#00FF41]/30 p-6 lg:col-span-1 relative overflow-hidden"
+          className="bg-[#09090B] border border-white/10 p-6 relative overflow-hidden"
         >
-          <div className="absolute top-3 right-3 px-2 py-1 bg-[#00FF41]/15 text-[#00FF41] font-mono text-[9px] tracking-[0.25em] uppercase">
+          <div className="absolute top-3 right-3 px-2 py-1 bg-white/5 text-white/60 font-mono text-[9px] tracking-[0.25em] uppercase">
             Current Plan
           </div>
           <Crown className="w-7 h-7 text-[#00FF41] mb-4" strokeWidth={1.8} />
@@ -127,73 +178,73 @@ export default function Pricing() {
           </button>
         </div>
 
-        {/* Services pricing */}
-        <div className="lg:col-span-2 bg-[#09090B] border border-white/10">
-          <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-[#00FF41]" strokeWidth={2} />
-              <span className="font-mono text-[10px] tracking-[0.25em] uppercase text-white/70">
-                Pay-per-Operation
-              </span>
-            </div>
-            <span className="font-mono text-[10px] text-white/40">
-              4 services
+        {/* (services section moved below) */}
+      </div>
+
+      {/* Services pricing — full width */}
+      <div className="bg-[#09090B] border border-white/10">
+        <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Zap className="w-3.5 h-3.5 text-[#00FF41]" strokeWidth={2} />
+            <span className="font-mono text-[10px] tracking-[0.25em] uppercase text-white/70">
+              Pay-per-Operation
             </span>
           </div>
+          <span className="font-mono text-[10px] text-white/40">4 services</span>
+        </div>
 
-          <div className="divide-y divide-white/5">
-            {SERVICES.map((s) => {
-              const canAfford = s.free || credits >= s.cost_value;
-              return (
+        <div className="divide-y divide-white/5">
+          {SERVICES.map((s) => {
+            const canAfford = s.free || credits >= s.cost_value;
+            return (
+              <div
+                key={s.key}
+                data-testid={s.testid}
+                className="grid grid-cols-[auto_1fr_auto_auto] gap-4 px-5 py-4 items-center hover:bg-white/[0.02]"
+              >
                 <div
-                  key={s.key}
-                  data-testid={s.testid}
-                  className="grid grid-cols-1 md:grid-cols-[auto_1fr_auto_auto] gap-4 px-5 py-4 items-center hover:bg-white/[0.02]"
+                  className={`w-10 h-10 border flex items-center justify-center ${
+                    s.free
+                      ? "border-[#00FF41]/40 text-[#00FF41] bg-[#00FF41]/5"
+                      : "border-white/15 text-white/70"
+                  }`}
                 >
-                  <div
-                    className={`w-10 h-10 border flex items-center justify-center ${
-                      s.free
-                        ? "border-[#00FF41]/40 text-[#00FF41] bg-[#00FF41]/5"
-                        : "border-white/15 text-white/70"
-                    }`}
-                  >
-                    <s.icon className="w-4 h-4" strokeWidth={2} />
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-white">{s.name}</div>
-                    <div className="font-mono text-[11px] text-white/50 mt-1 leading-snug">
-                      {s.desc}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div
-                      className={`font-mono text-sm font-bold ${
-                        s.free ? "text-[#00FF41]" : "text-white"
-                      }`}
-                    >
-                      {s.cost}
-                    </div>
-                    <div className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/30 mt-0.5">
-                      {s.free ? "Included" : "per execution"}
-                    </div>
-                  </div>
-                  <button
-                    data-testid={`${s.testid}-buy`}
-                    disabled={!canAfford && !s.free}
-                    className={`h-9 px-4 font-mono text-[10px] tracking-[0.2em] uppercase border transition-colors ${
-                      s.free
-                        ? "border-[#00FF41]/30 text-[#00FF41] hover:bg-[#00FF41]/10"
-                        : canAfford
-                          ? "border-white/15 text-white hover:border-[#00FF41]/40 hover:text-[#00FF41]"
-                          : "border-white/10 text-white/30 cursor-not-allowed"
-                    }`}
-                  >
-                    {s.free ? "Use Now" : canAfford ? "Run" : "Need Credits"}
-                  </button>
+                  <s.icon className="w-4 h-4" strokeWidth={2} />
                 </div>
-              );
-            })}
-          </div>
+                <div>
+                  <div className="text-sm font-semibold text-white">{s.name}</div>
+                  <div className="font-mono text-[11px] text-white/50 mt-1 leading-snug">
+                    {s.desc}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div
+                    className={`font-mono text-sm font-bold ${
+                      s.free ? "text-[#00FF41]" : "text-white"
+                    }`}
+                  >
+                    {s.cost}
+                  </div>
+                  <div className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/30 mt-0.5">
+                    {s.free ? "Included" : "per execution"}
+                  </div>
+                </div>
+                <button
+                  data-testid={`${s.testid}-buy`}
+                  disabled={!canAfford && !s.free}
+                  className={`h-9 px-4 font-mono text-[10px] tracking-[0.2em] uppercase border transition-colors ${
+                    s.free
+                      ? "border-[#00FF41]/30 text-[#00FF41] hover:bg-[#00FF41]/10"
+                      : canAfford
+                        ? "border-white/15 text-white hover:border-[#00FF41]/40 hover:text-[#00FF41]"
+                        : "border-white/10 text-white/30 cursor-not-allowed"
+                  }`}
+                >
+                  {s.free ? "Use Now" : canAfford ? "Run" : "Need Credits"}
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
 
