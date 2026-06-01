@@ -5,6 +5,10 @@ import remarkGfm from "remark-gfm";
 import { DOCS } from "../content/docs/index";
 import { ArrowLeft, Clock, Coins } from "lucide-react";
 
+// Hoisted to module scope so ReactMarkdown receives a stable reference and
+// doesn't re-initialise the markdown processor on every render.
+const REMARK_PLUGINS = [remarkGfm];
+
 const PLATFORM_COLOR = {
   Samsung: "border-blue-400/40 text-blue-300 bg-blue-400/5",
   MediaTek: "border-orange-400/40 text-orange-300 bg-orange-400/5",
@@ -54,7 +58,7 @@ export default function DocArticle() {
         </div>
 
         <div className="prose prose-invert max-w-none aether-markdown">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{doc.body}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={REMARK_PLUGINS}>{doc.body}</ReactMarkdown>
         </div>
       </article>
     </div>
