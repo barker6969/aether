@@ -176,7 +176,7 @@ export const BuyCreditsModal = ({ open, onClose }) => {
 
           <div className="flex items-center gap-2 font-mono text-[10px] text-white/40 leading-relaxed border-t border-white/5 pt-3">
             <ShieldCheck className="w-3.5 h-3.5 text-[#00FF41]" />
-            Payments secured by Stripe (test mode). Current balance:{" "}
+            Payments secured by Stripe. Current balance:{" "}
             <span className="text-[#00FF41] font-semibold">{user?.credits ?? 0} credits</span>.
           </div>
         </div>

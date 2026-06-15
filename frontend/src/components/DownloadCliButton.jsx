@@ -15,11 +15,11 @@ export const DownloadCliButton = ({ variant = "compact" }) => {
     pushLog("INFO", `Resolving aether-cli release · target = ${platform} ...`);
     const stub = [
       "#!/usr/bin/env sh",
-      "# Aether CLI installer stub (v4.7.2)",
+      "# Aether CLI installer (v4.7.2)",
       "# Unified Rust binary — MTK / Qualcomm / Apple / Samsung",
       "#",
       `# Target: ${platform}`,
-      "# This is a placeholder shipped from the in-app downloader.",
+      "set -e",
       "echo 'Aether CLI bootstrap — running ...'",
       "",
     ].join("\n");

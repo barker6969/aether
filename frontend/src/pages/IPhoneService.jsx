@@ -53,9 +53,6 @@ export default function IPhoneService() {
         <div className="flex-1 relative">
           <div className="flex items-center gap-2">
             <h1 data-testid="iphone-page-title" className="text-xl font-bold tracking-tight">iPhone Service Module</h1>
-            <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-[#00FF41] border border-[#00FF41]/40 bg-[#00FF41]/5 px-1.5 py-0.5">
-              AETHER NATIVE
-            </span>
           </div>
           <p className="font-mono text-[11px] tracking-[0.18em] uppercase text-white/40 mt-1">
             DFU Pipeline · checkm8 / pongoOS · A12 → A18 SoC

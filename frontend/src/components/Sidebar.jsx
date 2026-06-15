@@ -113,10 +113,6 @@ export const Sidebar = () => {
 
         <div className="border-t border-white/10 px-4 py-2 font-mono text-[10px] text-white/30 space-y-0.5">
           <div className="flex justify-between">
-            <span>BUILD</span>
-            <span className="text-white/60">4.7.2-stable</span>
-          </div>
-          <div className="flex justify-between">
             <span>LICENSE</span>
             <span className="text-[#00FF41] uppercase">{user?.plan?.replace(/_/g, " ") || "free"}</span>
           </div>

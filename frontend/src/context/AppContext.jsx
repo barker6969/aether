@@ -114,7 +114,7 @@ export const AppProvider = ({ children }) => {
       { delay: 500, level: "INFO", text: "[Aether] Qualcomm Sahara Engine Loaded" },
       { delay: 750, level: "INFO", text: "[Aether] MediaTek BROM Engine Loaded" },
       { delay: 1000, level: "INFO", text: "[Aether] Apple DFU Pipeline Loaded (checkm8 / pongoOS)" },
-      { delay: 1250, level: "INFO", text: "[Aether] Wallet sync · License: SOLO BUILDER · 100 credits available" },
+      { delay: 1250, level: "INFO", text: "[Aether] Wallet sync · license active" },
       { delay: 1500, level: "SUCCESS", text: "[Aether] Ready. Awaiting target device." },
     ];
     boot.forEach((b) => {

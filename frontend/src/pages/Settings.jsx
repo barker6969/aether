@@ -116,7 +116,7 @@ export default function Settings() {
           <div className="p-5 grid grid-cols-2 md:grid-cols-4 gap-4 font-mono text-xs">
             <div>
               <div className="text-white/40 text-[10px] tracking-[0.2em] uppercase mb-1">Version</div>
-              <div className="text-white">4.7.2 (stable)</div>
+              <div className="text-white">4.7.2</div>
             </div>
             <div>
               <div className="text-white/40 text-[10px] tracking-[0.2em] uppercase mb-1">Channel</div>
