@@ -126,7 +126,6 @@ export const AppProvider = ({ children }) => {
       timersRef.current.push(t);
     }
     return () => clearTimers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const value = {

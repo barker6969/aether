@@ -9,7 +9,7 @@ export default function PaymentCancel() {
         <XCircle className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
         <h1 className="text-xl font-bold tracking-tight">Checkout cancelled</h1>
         <p className="font-mono text-xs text-white/50 mt-2">
-          No charge was made. You can return to pricing whenever you're ready.
+          No charge was made. You can return to pricing whenever you&apos;re ready.
         </p>
         <Link
           to="/pricing"

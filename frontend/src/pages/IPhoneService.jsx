@@ -16,15 +16,14 @@ const SUPPORTED = [
 const SOC = ["A12", "A13", "A14", "A15", "A16", "A17 Pro", "A18", "A18 Pro"];
 
 const IPHONE_ACTIONS = [
-  { key: "modern_diag", label: "Modern Diagnostic", icon: Activity, cost: "20 Credits", desc: "Full hardware fingerprint + trust-cache audit.", testid: "iphone-action-diag" },
-  { key: "activation_probe", label: "Activation Probe", icon: Search, cost: "5 Credits", desc: "Detect Activation Lock / iCloud status (read-only).", testid: "iphone-action-probe" },
-  { key: "passcode_recovery", label: "Passcode Recovery", icon: Lock, cost: "30 Credits", desc: "Brute-tolerant recovery flow via DFU pipeline.", testid: "iphone-action-passcode" },
-  { key: "trust_audit", label: "Trust Cache Audit", icon: ShieldCheck, cost: "10 Credits", desc: "Verify SecureROM signatures vs Apple ground-truth.", testid: "iphone-action-trust" },
+  { key: "read_info",        label: "Modern Diagnostic", icon: Activity,    cost: "20 Credits", desc: "Full hardware fingerprint + trust-cache audit.", testid: "iphone-action-diag" },
+  { key: "icloud_check",     label: "Activation Probe",  icon: Search,      cost: "5 Credits",  desc: "Detect Activation Lock / iCloud status (read-only).", testid: "iphone-action-probe" },
+  { key: "passcode_recover", label: "Passcode Recovery", icon: Lock,        cost: "30 Credits", desc: "Brute-tolerant recovery flow via DFU pipeline.", testid: "iphone-action-passcode" },
+  { key: "trust_audit",      label: "Trust Cache Audit", icon: ShieldCheck, cost: "10 Credits", desc: "Verify SecureROM signatures vs Apple ground-truth.", testid: "iphone-action-trust" },
 ];
 
 export default function IPhoneService() {
   const { device, status, runAction, activeAction, credits, pushLog } = useApp();
-  // For iPhone module we treat any state as compatible since the demo doesn't generate iPhones
   const isApple = device && (device.platform === "Apple" || device.brand?.toLowerCase().includes("iphone"));
 
   const handleClick = (a) => {
@@ -32,8 +31,7 @@ export default function IPhoneService() {
       pushLog("ERROR", "Connect a target device before running iPhone operations.");
       return;
     }
-    // simulate using the diagnostic template
-    runAction("read_info", a.label);
+    runAction(a.key, a.label);
   };
 
   return (

@@ -148,7 +148,7 @@ export default function Login() {
             </form>
 
             <div className="text-center mt-5 font-mono text-[11px] text-white/50">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link to="/signup" data-testid="goto-signup-link" className="text-[#00FF41] hover:underline">
                 Create one →
               </Link>

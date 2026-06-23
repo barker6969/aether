@@ -56,7 +56,7 @@ export default function Terms() {
         <section>
           <h2 className="text-base font-semibold text-white mb-2">5. No warranty</h2>
           <p>
-            Aether Repair Tool is provided "as is". Operations on connected devices may permanently modify or erase data.
+            Aether Repair Tool is provided &ldquo;as is&rdquo;. Operations on connected devices may permanently modify or erase data.
             Aether Labs is not liable for hardware damage, data loss, or downstream business impact.
           </p>
         </section>
