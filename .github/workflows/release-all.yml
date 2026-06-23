@@ -89,12 +89,8 @@ jobs:
   # Build Desktop for Windows (MSI, NSIS, Portable)
   # ============================================================================
   build-desktop-windows:
-    name: Build Desktop Windows · ${{ matrix.bundle-type }}
+    name: Build Desktop Windows
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        bundle-type: [msi, nsis, portable]
 
     defaults:
       run:
@@ -126,14 +122,39 @@ jobs:
       - name: Install yarn dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Build bundle
-        run: yarn tauri build -- --bundles ${{ matrix.bundle-type }}
+      - name: Build MSI installer
+        run: yarn tauri build -- --bundles msi
 
-      - name: Upload artifact
+      - name: Build NSIS installer
+        run: yarn tauri build -- --bundles nsis
+
+      - name: Build portable executable
+        run: |
+          # Build app without bundler (generates executable)
+          cargo build --release --manifest-path src-tauri/Cargo.toml
+          # Copy to bundle directory for consistency
+          mkdir -p src-tauri/target/release/bundle/exe
+          copy "src-tauri/target/release/aether-desktop.exe" "src-tauri/target/release/bundle/exe/aether-desktop.exe"
+
+      - name: Upload MSI artifact
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-windows-${{ matrix.bundle-type }}
-          path: aether-desktop/src-tauri/target/release/bundle/
+          name: desktop-windows-msi
+          path: aether-desktop/src-tauri/target/release/bundle/msi/
+          retention-days: 5
+
+      - name: Upload NSIS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows-nsis
+          path: aether-desktop/src-tauri/target/release/bundle/nsis/
+          retention-days: 5
+
+      - name: Upload Portable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows-portable
+          path: aether-desktop/src-tauri/target/release/aether-desktop.exe
           retention-days: 5
 
   # ============================================================================
