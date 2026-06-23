@@ -1,38 +1,39 @@
 import React, { useState } from "react";
 import { useApp } from "../context/AppContext";
-import { Download, Terminal, Check, Copy } from "lucide-react";
+import { Download, Terminal, Check, Copy, ExternalLink } from "lucide-react";
 
-// Simulated download for the unified Rust binary CLI.
-// Generates an in-memory shell stub so the click feels real.
+// Download popover for the unified Rust binary CLI (aether-cli).
+// Points at the GitHub Releases artefacts produced by
+// .github/workflows/aether-cli-release.yml.
+//
+// Releases URL is configurable via REACT_APP_CLI_RELEASES_URL so you can
+// flip it on the first time you `git tag cli-v0.1.0 && git push --tags`.
 export const DownloadCliButton = ({ variant = "compact" }) => {
   const { pushLog } = useApp();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const RELEASES_BASE =
+    process.env.REACT_APP_CLI_RELEASES_URL ||
+    "https://github.com/aether-labs/aether-cli/releases/latest/download";
+
+  const VERSION = "0.1.0";
   const installCmd = "curl -fsSL https://get.aether.sh/cli.sh | sh";
 
-  const handleDownload = (platform) => {
-    pushLog("INFO", `Resolving aether-cli release · target = ${platform} ...`);
-    const stub = [
-      "#!/usr/bin/env sh",
-      "# Aether CLI installer (v4.7.2)",
-      "# Unified Rust binary — MTK / Qualcomm / Apple / Samsung",
-      "#",
-      `# Target: ${platform}`,
-      "set -e",
-      "echo 'Aether CLI bootstrap — running ...'",
-      "",
-    ].join("\n");
-    const blob = new Blob([stub], { type: "application/x-sh" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `aether-cli-${platform}.sh`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    pushLog("SUCCESS", `aether-cli (${platform}) installer downloaded.`);
+  const platforms = [
+    { label: "macOS (arm64)", key: "darwin-arm64", file: `aether-cli-${VERSION}-aarch64-apple-darwin.tar.gz` },
+    { label: "macOS (x64)", key: "darwin-x64", file: `aether-cli-${VERSION}-x86_64-apple-darwin.tar.gz` },
+    { label: "Linux (x64)", key: "linux-x64", file: `aether-cli-${VERSION}-x86_64-unknown-linux-gnu.tar.gz` },
+    { label: "Linux (arm64)", key: "linux-arm64", file: `aether-cli-${VERSION}-aarch64-unknown-linux-gnu.tar.gz` },
+    { label: "Windows (x64)", key: "windows-x64", file: `aether-cli-${VERSION}-x86_64-pc-windows-msvc.zip` },
+    { label: "Windows (arm64)", key: "windows-arm64", file: `aether-cli-${VERSION}-aarch64-pc-windows-msvc.zip` },
+  ];
+
+  const handleDownload = (p) => {
+    const url = `${RELEASES_BASE}/${p.file}`;
+    pushLog("INFO", `Resolving aether-cli release · target = ${p.key} ...`);
+    pushLog("SUCCESS", `Opening release: ${p.file}`);
+    window.open(url, "_blank", "noopener");
     setOpen(false);
   };
 
@@ -91,7 +92,7 @@ export const DownloadCliButton = ({ variant = "compact" }) => {
                   aether-cli · unified rust binary
                 </span>
               </div>
-              <span className="font-mono text-[9px] text-white/40">v4.7.2</span>
+              <span className="font-mono text-[9px] text-white/40">v{VERSION}</span>
             </div>
 
             <div className="p-4 space-y-3">
@@ -123,21 +124,15 @@ export const DownloadCliButton = ({ variant = "compact" }) => {
                   Native builds
                 </div>
                 <div className="grid grid-cols-2 gap-1.5">
-                  {[
-                    { label: "macOS (arm64)", key: "darwin-arm64" },
-                    { label: "macOS (x64)", key: "darwin-x64" },
-                    { label: "Linux (x64)", key: "linux-x64" },
-                    { label: "Linux (arm64)", key: "linux-arm64" },
-                    { label: "Windows (x64)", key: "windows-x64" },
-                    { label: "Windows (arm64)", key: "windows-arm64" },
-                  ].map((p) => (
+                  {platforms.map((p) => (
                     <button
                       key={p.key}
                       data-testid={`cli-download-${p.key}`}
-                      onClick={() => handleDownload(p.key)}
-                      className="h-8 px-2 border border-white/10 hover:border-[#00FF41]/40 hover:bg-[#00FF41]/5 hover:text-[#00FF41] text-white/70 font-mono text-[10px] tracking-[0.18em] uppercase transition-colors text-left"
+                      onClick={() => handleDownload(p)}
+                      className="h-8 px-2 border border-white/10 hover:border-[#00FF41]/40 hover:bg-[#00FF41]/5 hover:text-[#00FF41] text-white/70 font-mono text-[10px] tracking-[0.18em] uppercase transition-colors text-left flex items-center justify-between gap-1"
                     >
-                      {p.label}
+                      <span className="truncate">{p.label}</span>
+                      <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 opacity-50" />
                     </button>
                   ))}
                 </div>

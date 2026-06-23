@@ -6,6 +6,7 @@ import { Console } from "../components/Console";
 import { CloudExploitDB } from "../components/CloudExploitDB";
 import { FoundingBuilderBanner } from "../components/FoundingBuilderBanner";
 import { DemoModeBanner } from "../components/DemoModeBanner";
+import { GetDesktopHeroCard } from "../components/GetDesktopHeroCard";
 import { useApp } from "../context/AppContext";
 import { Activity, Database, ShieldCheck, Wifi } from "lucide-react";
 
@@ -40,6 +41,11 @@ export default function Dashboard() {
       {/* Demo Mode notice — clearly informs users the web UI is a preview */}
       <div className="flex-shrink-0">
         <DemoModeBanner />
+      </div>
+
+      {/* Native Windows download CTA — the user's primary conversion goal */}
+      <div className="flex-shrink-0">
+        <GetDesktopHeroCard />
       </div>
 
       {/* Founding Builder CTA */}

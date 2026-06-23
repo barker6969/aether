@@ -41,7 +41,8 @@ no browser required.
 cd aether-desktop
 yarn install
 
-# Drop a 1024x1024 PNG at src-tauri/icons/source.png (see icons/README.md), then:
+# (Optional — only if you want a different icon set than the auto-downloaded
+# Aether logo at src-tauri/icons/source.png — see icons/README.md.)
 yarn tauri icon src-tauri/icons/source.png
 
 # Build the platform installer:
@@ -51,6 +52,12 @@ yarn build:dmg        # macOS .dmg
 yarn build:appimage   # Linux .AppImage
 yarn build            # everything supported on the current host
 ```
+
+> **Note:** `frontendDist` in `tauri.conf.json` points at `../public/` which
+> contains a tiny `index.html` bootstrap. The real dashboard is loaded from
+> `app.windows[0].url` (the deployed Emergent host); the bootstrap is only
+> shown as a graceful "trying to reach Aether" fallback when the user is
+> offline or the server is unreachable.
 
 The installer drops out at:
 

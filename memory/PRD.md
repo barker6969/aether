@@ -48,3 +48,14 @@ EVERYTHING is MOCKED — there is no real device interaction, no real bypass / r
 - Test creds: admin@aether.dev / aether_admin_2026 (founding_builder, 5000 credits)
 - Bugs fixed post-test: brute-force lockout (was using k8s pod IP, now email-only), Stripe status (was 500ing, now graceful fallback to cached txn state)
 - KNOWN LIMITATION: Stripe status fetch via emergentintegrations SDK hits api.stripe.com directly which doesn't know about Emergent-proxy sessions — fulfilment relies on the /api/webhook/stripe webhook firing. UI gracefully shows pending with warning until webhook reconciles.
+
+## Native Desktop App — Tauri 2 (Feb 2026)
+- `/app/aether-desktop/` — Tauri 2 wrapper that bundles the React dashboard as a native `.msi` / `.exe` / `.dmg` / `.AppImage`. Window chrome theme=Dark, 1600×1000, WebView2 on Windows.
+- **Fixed P0 build blockers**: `frontendDist` now points at `public/index.html` (graceful "trying to reach Aether" splash + 6s remote fallback redirect). Icon set generated via `npx tauri icon` (32 / 128 / 128@2x / .ico / .icns / Square Windows-Store sizes). Rust toolchain installed + `cargo check --release` validates the workspace builds cleanly on Linux ARM64.
+- **P1 — Frontend conversion surface**:
+  - `DownloadDesktopButton.jsx` in window chrome top bar → popover with 5 platform targets (Win x64/arm64, macOS arm/intel, Linux x64), all pointing at GitHub Releases.
+  - `GetDesktopHeroCard.jsx` on Dashboard — dismissible hero card with `.msi` primary CTA + `.dmg`/`.AppImage` secondary links, localStorage-remembered.
+- **P2 — Polish**:
+  - `DownloadCliButton.jsx` rewired from fake shell-stub to real GitHub Release URLs (configurable via `REACT_APP_CLI_RELEASES_URL`).
+  - Env vars added: `REACT_APP_GITHUB_RELEASES_URL`, `REACT_APP_CLI_RELEASES_URL` — flip on once `git tag desktop-v0.1.0 && git push --tags` is run.
+- CI: `.github/workflows/aether-desktop-release.yml` matrix-builds .msi/.exe/.dmg/.AppImage for x64+arm64 across Windows/macOS/Linux on tag `desktop-v*`.

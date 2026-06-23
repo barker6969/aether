@@ -1,6 +1,7 @@
 import React from "react";
 import { Minus, Square, X } from "lucide-react";
 import { DownloadCliButton } from "./DownloadCliButton";
+import { DownloadDesktopButton } from "./DownloadDesktopButton";
 
 const LOGO_URL =
   "https://static.prod-images.emergentagent.com/jobs/540cc9df-c50a-4a07-a460-6c88ca22b1a7/images/2d4119f8e681e91c440e01928176b55e52818652e44fd72f5f424ba935136d9c.png";
@@ -26,6 +27,7 @@ export const WindowChrome = () => {
         </span>
       </div>
       <div className="flex items-center gap-3">
+        <DownloadDesktopButton variant="compact" />
         <DownloadCliButton variant="compact" />
         <div className="flex items-center gap-1">
           <button
