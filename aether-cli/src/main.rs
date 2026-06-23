@@ -1,0 +1,133 @@
+//! Aether CLI — entry point.
+//!
+//! Subcommand layout:
+//!     aether-cli devices            list USB targets currently attached
+//!     aether-cli scan               watch for new device hot-plug events
+//!     aether-cli info <port>        read chipset / IMEI / serial from target
+//!     aether-cli bypass-frp <port>  (NOT IMPLEMENTED) MTK BROM / Qualcomm EDL FRP bypass
+//!     aether-cli repair-imei <port> --imei1 <i> [--imei2 <i>]  (NOT IMPLEMENTED)
+//!     aether-cli unlock-bootloader <port>  (NOT IMPLEMENTED)
+//!     aether-cli serve              run local WebSocket bridge for the Aether web dashboard
+
+mod exploits;
+mod usb;
+mod bridge;
+
+use clap::{Parser, Subcommand};
+use colored::Colorize;
+
+const BANNER: &str = r#"
+   ▄▄▄       ▓█████ ▄▄▄█████▓ ██░ ██ ▓█████  ██▀███
+  ▒████▄     ▓█   ▀ ▓  ██▒ ▓▒▓██░ ██▒▓█   ▀ ▓██ ▒ ██▒
+  ▒██  ▀█▄   ▒███   ▒ ▓██░ ▒░▒██▀▀██░▒███   ▓██ ░▄█ ▒
+  ░██▄▄▄▄██  ▒▓█  ▄ ░ ▓██▓ ░ ░▓█ ░██ ▒▓█  ▄ ▒██▀▀█▄
+   ▓█   ▓██▒ ░▒████▒  ▒██▒ ░ ░▓█▒░██▓░▒████▒░██▓ ▒██▒
+"#;
+
+#[derive(Parser, Debug)]
+#[command(
+    name = "aether-cli",
+    version,
+    about = "Aether Repair Tool — unified CLI for MTK / Qualcomm / Apple / Samsung device repair",
+    long_about = None,
+)]
+struct Cli {
+    /// Verbose output (also enable with RUST_LOG=debug)
+    #[arg(short, long, global = true)]
+    verbose: bool,
+
+    /// Skip the banner.
+    #[arg(long, global = true)]
+    no_banner: bool,
+
+    #[command(subcommand)]
+    cmd: Command,
+}
+
+#[derive(Subcommand, Debug)]
+enum Command {
+    /// List all USB devices currently visible.
+    Devices,
+    /// Continuously watch for device hot-plug events.
+    Scan,
+    /// Read chipset / IMEI / serial from the target.
+    Info {
+        /// USB port identifier (e.g. "COM5", "/dev/ttyUSB0", or "auto").
+        #[arg(default_value = "auto")]
+        port: String,
+    },
+    /// Bypass Factory Reset Protection. (NOT YET IMPLEMENTED)
+    BypassFrp {
+        #[arg(default_value = "auto")]
+        port: String,
+    },
+    /// Restore / write IMEI to the modem NV partition. (NOT YET IMPLEMENTED)
+    RepairImei {
+        #[arg(default_value = "auto")]
+        port: String,
+        #[arg(long)]
+        imei1: String,
+        #[arg(long)]
+        imei2: Option<String>,
+    },
+    /// Unlock OEM bootloader. Destructive. (NOT YET IMPLEMENTED)
+    UnlockBootloader {
+        #[arg(default_value = "auto")]
+        port: String,
+    },
+    /// Run a local WebSocket bridge so the Aether web dashboard can talk to attached devices.
+    Serve {
+        /// Bind address.
+        #[arg(long, default_value = "127.0.0.1:8765")]
+        addr: String,
+    },
+}
+
+fn print_banner() {
+    println!("{}", BANNER.bright_green());
+    println!(
+        "  {} {}  ·  {}",
+        "Aether Repair Tool CLI".bright_white().bold(),
+        format!("v{}", env!("CARGO_PKG_VERSION")).bright_green(),
+        "MTK · Qualcomm · Apple · Samsung".dimmed(),
+    );
+    println!(
+        "  {}\n",
+        "For licensed technicians only. https://aether.dev/legal".dimmed()
+    );
+}
+
+fn init_tracing(verbose: bool) {
+    let filter = if verbose {
+        tracing_subscriber::EnvFilter::new("debug")
+    } else {
+        tracing_subscriber::EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"))
+    };
+    tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_target(false)
+        .compact()
+        .init();
+}
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let cli = Cli::parse();
+    init_tracing(cli.verbose);
+    if !cli.no_banner {
+        print_banner();
+    }
+    match cli.cmd {
+        Command::Devices => usb::list_devices()?,
+        Command::Scan => usb::watch_hotplug().await?,
+        Command::Info { port } => exploits::info::read_device_info(&port).await?,
+        Command::BypassFrp { port } => exploits::frp::bypass_frp(&port).await?,
+        Command::RepairImei { port, imei1, imei2 } => {
+            exploits::imei::repair_imei(&port, &imei1, imei2.as_deref()).await?
+        }
+        Command::UnlockBootloader { port } => exploits::bootloader::unlock(&port).await?,
+        Command::Serve { addr } => bridge::serve(&addr).await?,
+    }
+    Ok(())
+}
