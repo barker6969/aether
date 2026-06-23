@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useApp } from "../context/AppContext";
+import { useCliBridge } from "../hooks/useCliBridge";
 
 export const StatusBar = () => {
   const { status, device, comPort, logs } = useApp();
+  const { status: cliStatus, info: cliInfo, enabled: cliEnabled } = useCliBridge();
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -16,6 +18,20 @@ export const StatusBar = () => {
     connected: "bg-[#00FF41] animate-pulse-glow",
     working: "bg-cyan-400 animate-pulse",
   }[status];
+
+  const cliDot = {
+    offline: "bg-white/20",
+    connecting: "bg-yellow-400 animate-pulse",
+    connected: "bg-[#00FF41] animate-pulse-glow",
+  }[cliStatus];
+
+  const cliText = !cliEnabled
+    ? "CLI · disabled (demo)"
+    : cliStatus === "connected"
+      ? `CLI · live v${cliInfo?.version ?? "?"}`
+      : cliStatus === "connecting"
+        ? "CLI · connecting"
+        : "CLI · offline";
 
   return (
     <div
@@ -31,6 +47,15 @@ export const StatusBar = () => {
         <span>Port: {comPort || "—"}</span>
         <span className="text-white/20">|</span>
         <span>Device: {device?.model?.split(" ")[0] || "none"}</span>
+        <span className="text-white/20">|</span>
+        <span
+          data-testid="cli-bridge-status"
+          className={`flex items-center gap-2 ${cliStatus === "connected" ? "text-[#00FF41]" : ""}`}
+          title="Local Aether CLI bridge status. Run `aether-cli serve` to enable live mode."
+        >
+          <span className={`w-1.5 h-1.5 ${cliDot}`} />
+          {cliText}
+        </span>
       </div>
       <div className="flex items-center gap-4">
         <span>Logs: {logs.length}</span>

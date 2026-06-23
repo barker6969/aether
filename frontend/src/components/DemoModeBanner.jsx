@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Info, X, Download, ExternalLink } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import { useCliBridge } from "../hooks/useCliBridge";
 
 // Persistent (session-local) demo notice for end users.
 // Makes it crystal-clear that the web app is a preview / showcase,
@@ -9,6 +10,7 @@ const STORAGE_KEY = "aether.demo_banner.dismissed";
 
 export const DemoModeBanner = () => {
   const { pushLog } = useApp();
+  const { status: cliStatus } = useCliBridge();
   const [open, setOpen] = useState(() => {
     try {
       return sessionStorage.getItem(STORAGE_KEY) !== "1";
@@ -17,7 +19,8 @@ export const DemoModeBanner = () => {
     }
   });
 
-  if (!open) return null;
+  // Auto-hide whenever the local CLI bridge is connected — we're live, not demo.
+  if (!open || cliStatus === "connected") return null;
 
   const dismiss = () => {
     try { sessionStorage.setItem(STORAGE_KEY, "1"); } catch { /* ignore */ }

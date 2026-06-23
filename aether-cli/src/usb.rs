@@ -5,6 +5,7 @@
 use anyhow::{Context, Result};
 use colored::Colorize;
 use rusb::{Device, DeviceDescriptor, GlobalContext};
+use serde_json::{json, Value};
 use std::time::Duration;
 
 /// Pretty-print a single USB device row.
@@ -45,6 +46,25 @@ fn classify(desc: &DeviceDescriptor) -> Option<&'static str> {
         (0x04e8, 0x685d) => Some("Samsung Download mode"),
         _ => None,
     }
+}
+
+/// JSON representation of the current USB device list — used by the bridge.
+pub fn devices_as_json() -> Result<Vec<Value>> {
+    let mut out = Vec::new();
+    for d in rusb::devices()?.iter() {
+        let desc = match d.device_descriptor() {
+            Ok(x) => x,
+            Err(_) => continue,
+        };
+        out.push(json!({
+            "bus": d.bus_number(),
+            "addr": d.address(),
+            "vid": format!("{:04x}", desc.vendor_id()),
+            "pid": format!("{:04x}", desc.product_id()),
+            "repair_mode": classify(&desc),
+        }));
+    }
+    Ok(out)
 }
 
 pub fn list_devices() -> Result<()> {
