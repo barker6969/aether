@@ -1,0 +1,113 @@
+name: Release aether-desktop
+
+on:
+  push:
+    tags:
+      - "desktop-v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }} ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows, runner: windows-latest, target: x86_64-pc-windows-msvc,    bundle: msi }
+          - { os: windows, runner: windows-latest, target: aarch64-pc-windows-msvc,   bundle: msi }
+          - { os: macos,   runner: macos-latest,   target: x86_64-apple-darwin,       bundle: dmg }
+          - { os: macos,   runner: macos-latest,   target: aarch64-apple-darwin,      bundle: dmg }
+          - { os: linux,   runner: ubuntu-latest,  target: x86_64-unknown-linux-gnu,  bundle: appimage }
+
+    defaults:
+      run:
+        working-directory: aether-desktop
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: yarn
+          cache-dependency-path: aether-desktop/yarn.lock
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            aether-desktop/src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('aether-desktop/src-tauri/Cargo.toml') }}
+
+      - name: Linux deps
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Install yarn deps
+        run: yarn install --frozen-lockfile
+
+      - name: Generate icons (placeholder if source.png missing)
+        shell: bash
+        run: |
+          if [ ! -f src-tauri/icons/source.png ]; then
+            echo "⚠️  No source.png — using the web app's logo as a placeholder."
+            curl -L -o src-tauri/icons/source.png \
+              "https://static.prod-images.emergentagent.com/jobs/540cc9df-c50a-4a07-a460-6c88ca22b1a7/images/2d4119f8e681e91c440e01928176b55e52818652e44fd72f5f424ba935136d9c.png"
+          fi
+          yarn tauri icon src-tauri/icons/source.png || true
+
+      - name: Build
+        run: yarn tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundle }}
+        env:
+          # Code-sign placeholders — fill in your secrets.
+          # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          # TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          # APPLE_ID: ${{ secrets.APPLE_ID }}
+          # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          NODE_OPTIONS: "--max-old-space-size=4096"
+
+      - name: Upload artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: aether-desktop-${{ matrix.target }}
+          path: |
+            aether-desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.msi
+            aether-desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.exe
+            aether-desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.dmg
+            aether-desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.AppImage
+            aether-desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.deb
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/desktop-v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/*.msi
+            artifacts/**/*.exe
+            artifacts/**/*.dmg
+            artifacts/**/*.AppImage
+            artifacts/**/*.deb
+          generate_release_notes: true

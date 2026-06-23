@@ -1,0 +1,23 @@
+# Tauri build outputs
+target/
+gen/
+
+# Bundle staging
+dist/
+build/
+
+# Generated icons (regenerate from /icons/source.png via `tauri icon`)
+src-tauri/icons/*.png
+src-tauri/icons/*.icns
+src-tauri/icons/*.ico
+!src-tauri/icons/source.png
+
+# Node
+node_modules/
+.yarn/
+yarn-error.log
+package-lock.json
+
+# OS
+.DS_Store
+Thumbs.db
