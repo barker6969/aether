@@ -16,7 +16,14 @@ export const WindowChrome = () => {
         <span className="font-mono text-[11px] tracking-[0.25em] text-white/80 uppercase">
           Aether Repair Tool
         </span>
-        <span className="font-mono text-[10px] text-white/30">v4.7.2 SOLO</span>
+        <span className="font-mono text-[10px] text-white/30">v4.7.2</span>
+        <span
+          data-testid="window-demo-badge"
+          className="font-mono text-[9px] tracking-[0.25em] uppercase text-yellow-400 border border-yellow-400/40 bg-yellow-400/5 px-1.5 py-0.5"
+          title="Web demo — desktop CLI required for real device repair"
+        >
+          Demo
+        </span>
       </div>
       <div className="flex items-center gap-3">
         <DownloadCliButton variant="compact" />

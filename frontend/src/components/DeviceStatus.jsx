@@ -111,10 +111,11 @@ export const DeviceStatus = () => {
             data-testid="btn-start-scan"
             onClick={startSearch}
             disabled={isSearching}
+            title="Web demo — animated scan only. Install the Aether CLI for real device detection."
             className="flex-1 h-10 border border-[#00FF41]/40 bg-[#00FF41]/5 hover:bg-[#00FF41]/15 text-[#00FF41] font-mono text-xs tracking-[0.2em] uppercase transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
           >
             <Usb className="w-3.5 h-3.5" />
-            {isSearching ? "Scanning..." : "Start Scan"}
+            {isSearching ? "Scanning..." : "Start Scan (demo)"}
           </button>
         ) : (
           <button

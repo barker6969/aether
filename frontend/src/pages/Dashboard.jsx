@@ -5,6 +5,7 @@ import { ActionGrid } from "../components/ActionGrid";
 import { Console } from "../components/Console";
 import { CloudExploitDB } from "../components/CloudExploitDB";
 import { FoundingBuilderBanner } from "../components/FoundingBuilderBanner";
+import { DemoModeBanner } from "../components/DemoModeBanner";
 import { useApp } from "../context/AppContext";
 import { Activity, Database, ShieldCheck, Wifi } from "lucide-react";
 
@@ -36,6 +37,11 @@ export default function Dashboard() {
 
   return (
     <div data-testid="dashboard-page" className="h-full flex flex-col gap-3 p-4 overflow-y-auto">
+      {/* Demo Mode notice — clearly informs users the web UI is a preview */}
+      <div className="flex-shrink-0">
+        <DemoModeBanner />
+      </div>
+
       {/* Founding Builder CTA */}
       <div className="flex-shrink-0">
         <FoundingBuilderBanner />
