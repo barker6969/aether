@@ -1,0 +1,344 @@
+name: Release All Platforms
+
+on:
+  push:
+    tags:
+      - "release-v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g., 0.1.0)"
+        required: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # ============================================================================
+  # Build CLI for all platforms
+  # ============================================================================
+  build-cli:
+    name: Build CLI · ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest,  target: x86_64-unknown-linux-gnu,    artifact: aether-cli-linux-x64,     ext: "" }
+          - { os: macos-latest,   target: x86_64-apple-darwin,         artifact: aether-cli-macos-x64,     ext: "" }
+          - { os: macos-latest,   target: aarch64-apple-darwin,        artifact: aether-cli-macos-arm64,   ext: "" }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc,      artifact: aether-cli-windows,       ext: .exe }
+
+    defaults:
+      run:
+        working-directory: aether-cli
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            aether-cli/target
+          key: ${{ runner.os }}-cargo-cli-${{ matrix.target }}-${{ hashFiles('aether-cli/Cargo.lock') }}
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libusb-1.0-0-dev libudev-dev pkg-config
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install libusb pkg-config
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: vcpkg install libusb:x64-windows-static-md
+
+      - name: Build release
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Strip binary (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          strip target/${{ matrix.target }}/release/aether-cli
+          ls -lh target/${{ matrix.target }}/release/aether-cli
+
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: aether-cli/target/${{ matrix.target }}/release/aether-cli${{ matrix.ext }}
+          retention-days: 5
+
+  # ============================================================================
+  # Build Desktop for Windows (MSI, NSIS, Portable)
+  # ============================================================================
+  build-desktop-windows:
+    name: Build Desktop Windows · ${{ matrix.bundle-type }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        bundle-type: [msi, nsis, portable]
+
+    defaults:
+      run:
+        working-directory: aether-desktop
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            aether-desktop/src-tauri/target
+          key: ${{ runner.os }}-cargo-desktop-${{ hashFiles('aether-desktop/src-tauri/Cargo.lock') }}
+
+      - name: Install yarn dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build bundle
+        run: yarn tauri build -- --bundles ${{ matrix.bundle-type }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows-${{ matrix.bundle-type }}
+          path: aether-desktop/src-tauri/target/release/bundle/
+          retention-days: 5
+
+  # ============================================================================
+  # Build Desktop for Linux (AppImage, DEB)
+  # ============================================================================
+  build-desktop-linux:
+    name: Build Desktop Linux
+    runs-on: ubuntu-22.04
+
+    defaults:
+      run:
+        working-directory: aether-desktop
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libssl-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libfuse2
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            aether-desktop/src-tauri/target
+          key: ${{ runner.os }}-cargo-desktop-${{ hashFiles('aether-desktop/src-tauri/Cargo.lock') }}
+
+      - name: Install yarn dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build AppImage & DEB
+        run: yarn tauri build -- --bundles appimage,deb
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-linux
+          path: aether-desktop/src-tauri/target/release/bundle/
+          retention-days: 5
+
+  # ============================================================================
+  # Build Desktop for macOS (DMG, Universal)
+  # ============================================================================
+  build-desktop-macos:
+    name: Build Desktop macOS
+    runs-on: macos-latest
+
+    defaults:
+      run:
+        working-directory: aether-desktop
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin,aarch64-apple-darwin
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            aether-desktop/src-tauri/target
+          key: ${{ runner.os }}-cargo-desktop-${{ hashFiles('aether-desktop/src-tauri/Cargo.lock') }}
+
+      - name: Install yarn dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build DMG (Universal)
+        run: yarn tauri build -- --bundles dmg --target universal-apple-darwin
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-macos
+          path: aether-desktop/src-tauri/target/release/bundle/
+          retention-days: 5
+
+  # ============================================================================
+  # Create GitHub Release with all artifacts
+  # ============================================================================
+  create-release:
+    name: Create GitHub Release
+    needs: [build-cli, build-desktop-windows, build-desktop-linux, build-desktop-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Generate checksums
+        run: |
+          cd release-artifacts
+          find . -type f ! -name "*.sha256" -exec sha256sum {} \; > ../CHECKSUMS.sha256
+          cat ../CHECKSUMS.sha256
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release-artifacts/*/**/*
+            CHECKSUMS.sha256
+          body: |
+            # Aether Release
+            
+            ## Platform Support
+            
+            ### CLI Tool (aether-cli)
+            - **Linux**: `aether-cli-linux-x64` (x86_64)
+            - **macOS**: `aether-cli-macos-x64` (Intel), `aether-cli-macos-arm64` (Apple Silicon)
+            - **Windows**: `aether-cli-windows.exe` (x86_64)
+            
+            ### Desktop App
+            - **Windows**: MSI Installer, NSIS Installer, Portable EXE
+            - **Linux**: AppImage (Universal), DEB Package
+            - **macOS**: DMG Installer (Universal - Intel + Apple Silicon)
+            
+            ## Installation
+            
+            See [WINDOWS_INSTALL.md](https://github.com/${{ github.repository }}/blob/main/WINDOWS_INSTALL.md) for Windows setup.
+            
+            ### CLI Usage
+            ```bash
+            # Make executable (Linux/macOS)
+            chmod +x aether-cli-*
+            
+            # Run
+            ./aether-cli-linux-x64 --version
+            ```
+            
+            ### Desktop Usage
+            - **Windows MSI**: Double-click installer
+            - **Windows NSIS**: Double-click installer
+            - **Windows Portable**: Run `aether-desktop.exe` directly
+            - **Linux AppImage**: `chmod +x *.AppImage && ./Aether*.AppImage`
+            - **Linux DEB**: `sudo dpkg -i aether*.deb`
+            - **macOS DMG**: Double-click to mount, drag app to Applications
+            
+            ## Checksums
+            
+            Verify file integrity:
+            ```bash
+            sha256sum -c CHECKSUMS.sha256
+            ```
+            
+            ## System Requirements
+            
+            ### CLI
+            - No dependencies on any platform
+            
+            ### Desktop
+            - **Windows**: Windows 10 (build 19041)+ or Windows 11
+            - **Linux**: Ubuntu 20.04+, Fedora 32+, or similar
+            - **macOS**: macOS 10.13+
+            
+            ## Known Issues
+            
+            - None reported yet
+            
+            ## Changelog
+            
+            View [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for detailed changes.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release Summary
+        run: |
+          echo "## 🎉 Release Created Successfully!"
+          echo ""
+          echo "Download from: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
