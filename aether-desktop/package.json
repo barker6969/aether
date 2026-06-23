@@ -12,7 +12,7 @@
     "build:appimage": "tauri build --bundles appimage"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.1.0"
+    "@tauri-apps/cli": "^2.11.3"
   },
   "engines": {
     "node": ">=18"
