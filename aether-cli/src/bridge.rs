@@ -41,19 +41,19 @@ struct RpcRequest {
 }
 
 #[derive(Debug, Serialize)]
-struct RpcResponse<'a> {
+struct RpcResponse {
     jsonrpc: &'static str,
     id: Value,
     #[serde(skip_serializing_if = "Option::is_none")]
     result: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    error: Option<RpcError<'a>>,
+    error: Option<RpcError>,
 }
 
 #[derive(Debug, Serialize)]
-struct RpcError<'a> {
+struct RpcError {
     code: i32,
-    message: &'a str,
+    message: String,
 }
 
 pub async fn serve(addr: &str) -> Result<()> {
@@ -121,7 +121,7 @@ async fn handle_client(sock: tokio::net::TcpStream) {
                 jsonrpc: "2.0",
                 id,
                 result: None,
-                error: Some(RpcError { code: -32000, message: &msg }),
+                error: Some(RpcError { code: -32000, message: msg }),
             },
         };
         let payload = serde_json::to_value(&response).unwrap_or(Value::Null);
