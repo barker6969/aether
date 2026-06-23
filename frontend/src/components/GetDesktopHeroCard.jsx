@@ -94,7 +94,7 @@ export const GetDesktopHeroCard = () => {
           <div className="flex items-center gap-2 justify-end">
             <a
               data-testid="get-desktop-hero-mac"
-              href={`${RELEASES_BASE}/Aether_${VERSION}_aarch64.dmg`}
+              href={`${RELEASES_BASE}/Aether_${VERSION}_universal.dmg`}
               target="_blank"
               rel="noreferrer"
               onClick={dismiss}

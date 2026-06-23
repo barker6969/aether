@@ -28,24 +28,10 @@ export const DownloadDesktopButton = ({ variant = "compact" }) => {
       icon: Monitor,
     },
     {
-      key: "windows-arm64",
-      label: "Windows (arm64)",
-      sub: ".msi installer · 6.1 MB",
-      file: `Aether_${VERSION}_arm64_en-US.msi`,
-      icon: Monitor,
-    },
-    {
-      key: "macos-arm64",
-      label: "macOS (Apple Silicon)",
-      sub: ".dmg · 9.8 MB",
-      file: `Aether_${VERSION}_aarch64.dmg`,
-      icon: Apple,
-    },
-    {
-      key: "macos-x64",
-      label: "macOS (Intel)",
-      sub: ".dmg · 10.1 MB",
-      file: `Aether_${VERSION}_x64.dmg`,
+      key: "macos-universal",
+      label: "macOS (Universal)",
+      sub: ".dmg · Intel + Apple Silicon · 12.3 MB",
+      file: `Aether_${VERSION}_universal.dmg`,
       icon: Apple,
     },
     {

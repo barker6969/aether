@@ -24,9 +24,7 @@ export const DownloadCliButton = ({ variant = "compact" }) => {
     { label: "macOS (arm64)", key: "darwin-arm64", file: `aether-cli-${VERSION}-aarch64-apple-darwin.tar.gz` },
     { label: "macOS (x64)", key: "darwin-x64", file: `aether-cli-${VERSION}-x86_64-apple-darwin.tar.gz` },
     { label: "Linux (x64)", key: "linux-x64", file: `aether-cli-${VERSION}-x86_64-unknown-linux-gnu.tar.gz` },
-    { label: "Linux (arm64)", key: "linux-arm64", file: `aether-cli-${VERSION}-aarch64-unknown-linux-gnu.tar.gz` },
     { label: "Windows (x64)", key: "windows-x64", file: `aether-cli-${VERSION}-x86_64-pc-windows-msvc.zip` },
-    { label: "Windows (arm64)", key: "windows-arm64", file: `aether-cli-${VERSION}-aarch64-pc-windows-msvc.zip` },
   ];
 
   const handleDownload = (p) => {
