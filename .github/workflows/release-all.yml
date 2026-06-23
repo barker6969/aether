@@ -130,11 +130,9 @@ jobs:
 
       - name: Build portable executable
         run: |
-          # Build app without bundler (generates executable)
           cargo build --release --manifest-path src-tauri/Cargo.toml
-          # Copy to bundle directory for consistency
-          mkdir -p src-tauri/target/release/bundle/exe
-          copy "src-tauri/target/release/aether-desktop.exe" "src-tauri/target/release/bundle/exe/aether-desktop.exe"
+          mkdir -p src-tauri/target/release/bundle/portable
+          powershell -Command "Copy-Item 'src-tauri/target/release/aether-desktop.exe' -Destination 'src-tauri/target/release/bundle/portable/aether-desktop.exe'"
 
       - name: Upload MSI artifact
         uses: actions/upload-artifact@v4
@@ -142,6 +140,7 @@ jobs:
           name: desktop-windows-msi
           path: aether-desktop/src-tauri/target/release/bundle/msi/
           retention-days: 5
+        continue-on-error: true
 
       - name: Upload NSIS artifact
         uses: actions/upload-artifact@v4
@@ -149,13 +148,15 @@ jobs:
           name: desktop-windows-nsis
           path: aether-desktop/src-tauri/target/release/bundle/nsis/
           retention-days: 5
+        continue-on-error: true
 
       - name: Upload Portable artifact
         uses: actions/upload-artifact@v4
         with:
           name: desktop-windows-portable
-          path: aether-desktop/src-tauri/target/release/aether-desktop.exe
+          path: aether-desktop/src-tauri/target/release/bundle/portable/
           retention-days: 5
+        continue-on-error: true
 
   # ============================================================================
   # Build Desktop for Linux (AppImage, DEB)
@@ -220,6 +221,7 @@ jobs:
           name: desktop-linux
           path: aether-desktop/src-tauri/target/release/bundle/
           retention-days: 5
+        continue-on-error: true
 
   # ============================================================================
   # Build Desktop for macOS (DMG, Universal)
@@ -267,6 +269,7 @@ jobs:
           name: desktop-macos
           path: aether-desktop/src-tauri/target/release/bundle/
           retention-days: 5
+        continue-on-error: true
 
   # ============================================================================
   # Create GitHub Release with all artifacts
