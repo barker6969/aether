@@ -2,6 +2,12 @@
 
 ## 2026-02-23 · Desktop CI green + Tauri wrapper shipped
 
+### aether-cli v0.1.0 ship-readiness (Feb 23)
+- Fixed Rust borrow-checker bug in `bridge.rs` — `RpcError` held a `&str` reference to a `String` dropped mid-match arm. Switched to owned `String`. Binary compiles clean (`cargo build --release` 13s, 1.5 MB stripped).
+- Verified runtime: `--help`, `--version`, `serve` all functional.
+- Added `libudev-dev` to CLI Linux CI deps (transitive `serialport` requirement).
+- Known limitation: `rusb::devices()` panics on USB-less environments (containers, headless CI). Real Windows/macOS/Linux tech machines are fine. Defer graceful fallback to v0.2.0.
+
 ### Tauri Desktop Wrapper
 - `/app/aether-desktop/` — Tauri 2 wraps the React dashboard as native `.msi` (Win x64), `.dmg` (macOS Universal), `.AppImage` (Linux x64).
 - `public/index.html` splash bootstrap + 6s remote-URL fallback redirect.
