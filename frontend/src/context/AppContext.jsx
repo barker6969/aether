@@ -106,8 +106,11 @@ export const AppProvider = ({ children }) => {
     [status, activeAction, device, pushLog]
   );
 
-  // Boot sequence
+  // Boot sequence — ref-guarded so it runs once even if deps change.
+  const bootedRef = useRef(false);
   useEffect(() => {
+    if (bootedRef.current) return;
+    bootedRef.current = true;
     pushLog("INFO", "[Aether] Initializing modules...");
     const boot = [
       { delay: 250, level: "INFO", text: "[Aether] Loading kernel driver aether-usb 2.4.1 ... OK" },
@@ -126,7 +129,7 @@ export const AppProvider = ({ children }) => {
       timersRef.current.push(t);
     }
     return () => clearTimers();
-  }, []);
+  }, [autoConnect, pushLog, startSearch]);
 
   const value = {
     status,
