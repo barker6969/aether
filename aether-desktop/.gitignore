@@ -6,11 +6,9 @@ gen/
 dist/
 build/
 
-# Generated icons (regenerate from /icons/source.png via `tauri icon`)
-src-tauri/icons/*.png
-src-tauri/icons/*.icns
-src-tauri/icons/*.ico
-!src-tauri/icons/source.png
+# Generated icons — committed to the repo so CI doesn't have to regenerate.
+# (Regenerate from src-tauri/icons/source.png via `yarn tauri icon` and commit
+#  the result. Keeping them in git makes builds deterministic.)
 
 # Node
 node_modules/

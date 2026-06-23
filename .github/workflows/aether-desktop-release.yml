@@ -8,106 +8,95 @@ on:
 
 jobs:
   build:
-    name: Build ${{ matrix.os }} ${{ matrix.target }}
-    runs-on: ${{ matrix.runner }}
+    name: Build · ${{ matrix.platform }}
+    permissions:
+      contents: write
+
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { os: windows, runner: windows-latest, target: x86_64-pc-windows-msvc,    bundle: msi }
-          - { os: windows, runner: windows-latest, target: aarch64-pc-windows-msvc,   bundle: msi }
-          - { os: macos,   runner: macos-latest,   target: x86_64-apple-darwin,       bundle: dmg }
-          - { os: macos,   runner: macos-latest,   target: aarch64-apple-darwin,      bundle: dmg }
-          - { os: linux,   runner: ubuntu-latest,  target: x86_64-unknown-linux-gnu,  bundle: appimage }
+          # macOS — universal binary covers both Intel + Apple Silicon
+          - platform: macos-latest
+            args: "--target universal-apple-darwin"
+            bundle: dmg
+          # Linux — ubuntu-22.04 is required for libwebkit2gtk-4.1 (24.04 ships 4.0)
+          - platform: ubuntu-22.04
+            args: ""
+            bundle: appimage
+          # Windows — x64 only (arm64 needs extra MSVC components, fragile in CI)
+          - platform: windows-latest
+            args: ""
+            bundle: msi
 
-    defaults:
-      run:
-        working-directory: aether-desktop
+    runs-on: ${{ matrix.platform }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Install Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: yarn
-          cache-dependency-path: aether-desktop/yarn.lock
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-
-      - name: Cache cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            aether-desktop/src-tauri/target
-          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('aether-desktop/src-tauri/Cargo.toml') }}
-
-      - name: Linux deps
-        if: matrix.os == 'linux'
+      # Install webkit + GTK on Linux BEFORE the Rust toolchain so build scripts
+      # that link against system libraries during cargo check don't blow up.
+      - name: Linux system deps
+        if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libayatana-appindicator3-dev librsvg2-dev
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libssl-dev \
+            libgtk-3-dev \
+            libsoup-3.0-dev \
+            build-essential \
+            curl \
+            wget \
+            file
 
-      - name: Install yarn deps
-        run: yarn install --frozen-lockfile
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Universal Apple target needs both arches available.
+          targets: ${{ matrix.platform == 'macos-latest' && 'x86_64-apple-darwin,aarch64-apple-darwin' || '' }}
 
-      - name: Generate icons (placeholder if source.png missing)
-        shell: bash
-        run: |
-          if [ ! -f src-tauri/icons/source.png ]; then
-            echo "⚠️  No source.png — using the web app's logo as a placeholder."
-            curl -L -o src-tauri/icons/source.png \
-              "https://static.prod-images.emergentagent.com/jobs/540cc9df-c50a-4a07-a460-6c88ca22b1a7/images/2d4119f8e681e91c440e01928176b55e52818652e44fd72f5f424ba935136d9c.png"
-          fi
-          yarn tauri icon src-tauri/icons/source.png || true
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "aether-desktop/src-tauri -> target"
+          key: ${{ matrix.platform }}
 
-      - name: Build
-        run: yarn tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundle }}
+      - name: Install frontend dependencies
+        run: yarn install
+        working-directory: aether-desktop
+
+      # Official Tauri action — handles `tauri build`, icon detection,
+      # bundle generation, artefact upload, and draft release creation.
+      - name: Build & release
+        uses: tauri-apps/tauri-action@v0
         env:
-          # Code-sign placeholders — fill in your secrets.
-          # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          # TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          # APPLE_ID: ${{ secrets.APPLE_ID }}
-          # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          NODE_OPTIONS: "--max-old-space-size=4096"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: aether-desktop
+          tagName: ${{ github.ref_name }}
+          releaseName: "Aether Repair Tool ${{ github.ref_name }}"
+          releaseBody: |
+            ## Aether Repair Tool · ${{ github.ref_name }}
 
-      - name: Upload artefacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: aether-desktop-${{ matrix.target }}
-          path: |
-            aether-desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.msi
-            aether-desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.exe
-            aether-desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.dmg
-            aether-desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.AppImage
-            aether-desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.deb
+            Native desktop builds — drop-in replacement for the web preview.
 
-  release:
-    if: startsWith(github.ref, 'refs/tags/desktop-v')
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          merge-multiple: true
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            artifacts/**/*.msi
-            artifacts/**/*.exe
-            artifacts/**/*.dmg
-            artifacts/**/*.AppImage
-            artifacts/**/*.deb
-          generate_release_notes: true
+            **Downloads**
+            - 🪟 `.msi` — Windows x64
+            - 🍎 `.dmg` — macOS (universal: Intel + Apple Silicon)
+            - 🐧 `.AppImage` — Linux x64
+
+            Skips Demo Mode — talks to MTK BROM, Qualcomm Sahara/Firehose,
+            Apple DFU, Samsung KG directly over USB via the bundled CLI bridge.
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
