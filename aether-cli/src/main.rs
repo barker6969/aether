@@ -12,6 +12,7 @@
 mod exploits;
 mod usb;
 mod bridge;
+mod mtkclient;
 
 use clap::{Parser, Subcommand};
 use colored::Colorize;
@@ -56,12 +57,13 @@ enum Command {
         #[arg(default_value = "auto")]
         port: String,
     },
-    /// Bypass Factory Reset Protection. (NOT YET IMPLEMENTED)
+    /// Bypass Factory Reset Protection via mtkclient (erases the FRP partition).
     BypassFrp {
         #[arg(default_value = "auto")]
         port: String,
     },
-    /// Restore / write IMEI to the modem NV partition. (NOT YET IMPLEMENTED)
+    /// Restore / write IMEI to the modem NV partition via mtkclient.
+    /// LEGAL: only for restoring an OEM-printed IMEI after a flash — see NOTICE.md.
     RepairImei {
         #[arg(default_value = "auto")]
         port: String,
@@ -70,7 +72,7 @@ enum Command {
         #[arg(long)]
         imei2: Option<String>,
     },
-    /// Unlock OEM bootloader. Destructive. (NOT YET IMPLEMENTED)
+    /// Unlock OEM bootloader via mtkclient seccfg patch. Destructive — wipes userdata.
     UnlockBootloader {
         #[arg(default_value = "auto")]
         port: String,
@@ -81,6 +83,11 @@ enum Command {
         #[arg(long, default_value = "127.0.0.1:8765")]
         addr: String,
     },
+    /// First-launch setup — installs Python dependencies (mtkclient) via pip.
+    /// Safe to re-run; pip-upgrades if a newer mtkclient is published.
+    Setup,
+    /// Print the version of the bundled / detected mtkclient (Python tool).
+    Doctor,
 }
 
 fn print_banner() {
@@ -128,6 +135,19 @@ async fn main() -> anyhow::Result<()> {
         }
         Command::UnlockBootloader { port } => exploits::bootloader::unlock(&port).await?,
         Command::Serve { addr } => bridge::serve(&addr).await?,
+        Command::Setup => {
+            println!("  {} installing mtkclient via pip (requires Python 3.8+) ...", "→".bright_green());
+            let out = mtkclient::install_mtkclient().await?;
+            println!("{}", out.dimmed());
+            let ver = mtkclient::check_mtkclient()?;
+            println!("  {} mtkclient {} ready", "✓".bright_green(), ver.bright_white());
+        }
+        Command::Doctor => {
+            match mtkclient::check_mtkclient() {
+                Ok(v) => println!("  {} mtkclient {}", "✓".bright_green(), v.bright_white()),
+                Err(e) => println!("  {} {}", "✗".bright_red(), e),
+            }
+        }
     }
     Ok(())
 }

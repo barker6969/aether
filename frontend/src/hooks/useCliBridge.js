@@ -4,14 +4,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * useCliBridge — connect to the local Aether CLI WebSocket bridge.
  *
  * 1. Reads `localStorage.aether.bridge` (default: `ws://127.0.0.1:8765`).
- * 2. Auto-reconnects every 5s if the CLI is offline.
- * 3. Performs a JSON-RPC `hello` handshake on connect.
- * 4. Returns { status, info, call, lastEvent }.
- *
- * NOTE: native WebSocket cannot speak raw TCP/newline-JSON — the CLI must run
- * an actual WS upgrade (e.g. via `tokio-tungstenite`). Until then this hook
- * sits idle and reports `status = "offline"`, which is the correct behaviour
- * for demo mode.
+ * 2. Connects when enabled via `localStorage.aether.bridge.enabled = "1"`,
+ *    auto-reconnects every 5 s if the CLI goes offline.
+ * 3. Performs a JSON-RPC `hello` handshake on connect — returned info
+ *    (CLI version, mtkclient version, capabilities) lives on the `info`
+ *    field.
+ * 4. `call(method, params)` issues a one-shot request/response.
+ * 5. `runJob(method, params, onEvent)` starts a streaming mtkclient job
+ *    (FRP bypass, IMEI repair, bootloader unlock, etc.). The callback
+ *    receives every `event` notification — including the final
+ *    `{stream:"done", exit_code:N}` payload. Returns a promise that
+ *    resolves to the exit code.
  */
 const DEFAULT_URL = "ws://127.0.0.1:8765";
 
@@ -23,6 +26,7 @@ export function useCliBridge() {
   const [lastEvent, setLastEvent] = useState(null);
   const wsRef = useRef(null);
   const pendingRef = useRef(new Map());
+  const jobSubsRef = useRef(new Map()); // job_id → onEvent callback
   const reconnectRef = useRef(null);
 
   const url =
@@ -60,7 +64,6 @@ export function useCliBridge() {
 
     ws.onopen = () => {
       setStatus("connected");
-      // handshake
       const id = ++rpcId;
       ws.send(JSON.stringify({ jsonrpc: "2.0", id, method: "hello", params: {} }));
       pendingRef.current.set(id, (res) => setInfo(res));
@@ -69,12 +72,25 @@ export function useCliBridge() {
     ws.onmessage = (msg) => {
       let payload;
       try { payload = JSON.parse(msg.data); } catch { return; }
+
+      // Response to a previous call() — resolve its promise.
       if (payload.id != null && pendingRef.current.has(payload.id)) {
         const cb = pendingRef.current.get(payload.id);
         pendingRef.current.delete(payload.id);
         cb(payload.result ?? payload.error);
-      } else if (payload.method === "event") {
+        return;
+      }
+
+      // Server-pushed event — route to job subscribers + expose lastEvent.
+      if (payload.method === "event" && payload.params?.job_id) {
         setLastEvent(payload.params);
+        const sub = jobSubsRef.current.get(payload.params.job_id);
+        if (sub) {
+          sub(payload.params);
+          if (payload.params.stream === "done") {
+            jobSubsRef.current.delete(payload.params.job_id);
+          }
+        }
       }
     };
 
@@ -83,6 +99,13 @@ export function useCliBridge() {
       setStatus("offline");
       setInfo(null);
       wsRef.current = null;
+      // Reject all pending RPCs + job subs so callers don't hang.
+      for (const cb of pendingRef.current.values()) cb({ error: "CLI offline" });
+      pendingRef.current.clear();
+      for (const sub of jobSubsRef.current.values()) {
+        sub({ stream: "done", exit_code: -1, line: "bridge disconnected" });
+      }
+      jobSubsRef.current.clear();
       reconnectRef.current = setTimeout(connect, 5000);
     };
   }, [enabled, url]);
@@ -97,7 +120,6 @@ export function useCliBridge() {
       const id = ++rpcId;
       pendingRef.current.set(id, resolve);
       ws.send(JSON.stringify({ jsonrpc: "2.0", id, method, params }));
-      // 8s timeout
       setTimeout(() => {
         if (pendingRef.current.has(id)) {
           pendingRef.current.delete(id);
@@ -107,11 +129,38 @@ export function useCliBridge() {
     });
   }, []);
 
+  /**
+   * Run a long-lived mtkclient job and stream its output line-by-line.
+   *
+   *   runJob("mtk.frp_bypass", {}, (ev) => console.log(ev.line))
+   *     .then(exit_code => ...)
+   */
+  const runJob = useCallback((method, params, onEvent) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const res = await call(method, params);
+        if (!res?.job_id) {
+          reject(new Error(res?.message || "job did not start"));
+          return;
+        }
+        const jobId = res.job_id;
+        jobSubsRef.current.set(jobId, (ev) => {
+          try { onEvent?.(ev); } catch (_) { /* user callback bug — ignore */ }
+          if (ev.stream === "done") {
+            resolve(ev.exit_code);
+          }
+        });
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }, [call]);
+
   useEffect(() => {
     if (!enabled) return;
     connect();
     return cleanup;
   }, [enabled, connect, cleanup]);
 
-  return { status, info, lastEvent, call, enabled, url };
+  return { status, info, lastEvent, call, runJob, enabled, url };
 }

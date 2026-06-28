@@ -1,0 +1,153 @@
+//! `mtkclient` subprocess wrapper.
+//!
+//! `mtkclient` (https://github.com/bkerler/mtkclient — GPL-3.0) is the
+//! battle-tested open-source MediaTek BROM/DA exploit suite. Rather than
+//! re-implement BROM exploits from scratch (~weeks of work), Aether shells
+//! out to mtkclient as a subprocess and streams its stdout/stderr back to
+//! the Aether web dashboard over the JSON-RPC bridge.
+//!
+//! See `/app/aether-cli/NOTICE.md` for the license / attribution.
+//!
+//! Reasons we keep mtkclient as a subprocess rather than embedding:
+//!   1. GPL-3.0 compatibility — `mere aggregation` via subprocess is widely
+//!      accepted as not requiring derivative-work licensing. Linking
+//!      mtkclient's code directly would force Aether-CLI to GPL.
+//!   2. mtkclient evolves rapidly — keeping it as an external dep means
+//!      `pip install --upgrade mtkclient` picks up new chipset support
+//!      without an Aether release.
+//!   3. Python is already required on Windows for most repair shop toolchains.
+
+use anyhow::{anyhow, Context, Result};
+use std::process::Stdio;
+use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::process::{Child, Command};
+use tokio::sync::mpsc::UnboundedSender;
+
+/// One line streamed from a running mtkclient invocation.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct StreamLine {
+    /// "stdout" | "stderr"
+    pub stream: &'static str,
+    pub line: String,
+}
+
+/// Resolved Python interpreter path (e.g. `python3` on Linux/macOS, `python`
+/// on Windows after Python.org installer, or `py -3` on systems with the
+/// Python launcher). Cached on first call.
+fn find_python() -> Result<String> {
+    for candidate in ["python3", "python", "py"] {
+        if let Ok(out) = std::process::Command::new(candidate)
+            .arg("--version")
+            .output()
+        {
+            if out.status.success() {
+                return Ok(candidate.to_string());
+            }
+        }
+    }
+    Err(anyhow!(
+        "python not found on PATH — install Python 3.8+ from https://www.python.org/downloads/ \
+         (on Windows, tick 'Add python.exe to PATH' in the installer), then run \
+         `aether-cli setup` to install mtkclient."
+    ))
+}
+
+/// Verify mtkclient is importable. Returns its installed version string,
+/// e.g. "2.0.2", on success.
+pub fn check_mtkclient() -> Result<String> {
+    let python = find_python()?;
+    let out = std::process::Command::new(&python)
+        .args(["-c", "import mtkclient, sys; print(getattr(mtkclient, '__version__', 'unknown'))"])
+        .output()
+        .context("failed to spawn python")?;
+    if !out.status.success() {
+        return Err(anyhow!(
+            "mtkclient not installed — run `aether-cli setup` (uses `pip install --user mtkclient`)."
+        ));
+    }
+    Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
+}
+
+/// Install mtkclient via `pip install --user`. Returns the captured combined
+/// stdout/stderr so the caller can stream it to the user.
+pub async fn install_mtkclient() -> Result<String> {
+    let python = find_python()?;
+    let out = Command::new(&python)
+        .args(["-m", "pip", "install", "--user", "--upgrade", "mtkclient"])
+        .output()
+        .await
+        .context("failed to spawn pip")?;
+    let text = format!(
+        "{}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    if !out.status.success() {
+        return Err(anyhow!("pip install failed:\n{}", text));
+    }
+    Ok(text)
+}
+
+/// Spawn `python -m mtkclient ARGS...` and stream each stdout/stderr line
+/// through the provided channel until the process exits. Returns the exit
+/// code (0 = success).
+pub async fn run_mtkclient_streaming(
+    args: &[&str],
+    tx: UnboundedSender<StreamLine>,
+) -> Result<i32> {
+    let python = find_python()?;
+    let mut cmd = Command::new(&python);
+    cmd.arg("-m").arg("mtkclient");
+    for a in args {
+        cmd.arg(a);
+    }
+    cmd.stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .stdin(Stdio::null());
+
+    let mut child: Child = cmd.spawn().context("failed to spawn mtkclient")?;
+    let stdout = child.stdout.take().ok_or_else(|| anyhow!("no stdout"))?;
+    let stderr = child.stderr.take().ok_or_else(|| anyhow!("no stderr"))?;
+
+    let tx_out = tx.clone();
+    let stdout_task = tokio::spawn(async move {
+        let mut lines = BufReader::new(stdout).lines();
+        while let Ok(Some(line)) = lines.next_line().await {
+            let _ = tx_out.send(StreamLine { stream: "stdout", line });
+        }
+    });
+
+    let tx_err = tx.clone();
+    let stderr_task = tokio::spawn(async move {
+        let mut lines = BufReader::new(stderr).lines();
+        while let Ok(Some(line)) = lines.next_line().await {
+            let _ = tx_err.send(StreamLine { stream: "stderr", line });
+        }
+    });
+
+    let status = child.wait().await.context("mtkclient exited abnormally")?;
+    let _ = stdout_task.await;
+    let _ = stderr_task.await;
+    drop(tx); // close channel so receivers can finish
+
+    Ok(status.code().unwrap_or(-1))
+}
+
+/// Collect the streamed output into a single string. Useful for the
+/// non-streaming CLI subcommands (`aether-cli bypass-frp`) — the bridge
+/// uses the streaming variant directly.
+pub async fn run_mtkclient_collect(args: &[&str]) -> Result<(i32, String)> {
+    let owned: Vec<String> = args.iter().map(|s| s.to_string()).collect();
+    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<StreamLine>();
+    let join = tokio::spawn(async move {
+        let refs: Vec<&str> = owned.iter().map(|s| s.as_str()).collect();
+        run_mtkclient_streaming(&refs, tx).await
+    });
+    let mut buf = String::new();
+    while let Some(line) = rx.recv().await {
+        buf.push_str(&line.line);
+        buf.push('\n');
+    }
+    let exit = join.await.context("mtkclient task panicked")??;
+    Ok((exit, buf))
+}
