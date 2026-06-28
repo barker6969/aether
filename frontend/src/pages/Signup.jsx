@@ -133,7 +133,8 @@ export default function Signup() {
               {err && (
                 <div
                   data-testid="signup-error"
-                  className="flex items-start gap-2 px-3 py-2 border border-red-500/30 bg-red-500/5 text-red-300 text-xs"
+                  role="alert"
+                  className="error flex items-start gap-2 px-3 py-2 border border-red-500/30 bg-red-500/5 text-red-300 text-xs"
                 >
                   <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                   <span>{err}</span>

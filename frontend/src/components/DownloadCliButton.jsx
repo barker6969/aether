@@ -1,24 +1,24 @@
 import React, { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { Download, Terminal, Check, Copy, ExternalLink } from "lucide-react";
+import { CLI_VERSION as VERSION, CLI_RELEASES_BASE as RELEASES_BASE } from "../lib/releases";
 
 // Download popover for the unified Rust binary CLI (aether-cli).
 // Points at the GitHub Releases artefacts produced by
 // .github/workflows/aether-cli-release.yml.
 //
-// Releases URL is configurable via REACT_APP_CLI_RELEASES_URL so you can
-// flip it on the first time you `git tag cli-v0.1.0 && git push --tags`.
+// Release base + version come from /lib/releases.js — flip them there
+// (or via REACT_APP_CLI_RELEASES_URL) when you tag a new CLI release.
 export const DownloadCliButton = ({ variant = "compact" }) => {
   const { pushLog } = useApp();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const RELEASES_BASE =
-    process.env.REACT_APP_CLI_RELEASES_URL ||
-    "https://github.com/aether-labs/aether-cli/releases/latest/download";
-
-  const VERSION = "0.1.0";
-  const installCmd = "curl -fsSL https://get.aether.sh/cli.sh | sh";
+  // PowerShell one-liner that downloads the latest Windows zip from the
+  // configured GitHub Release. macOS/Linux users can copy the equivalent
+  // curl command from the buttons below.
+  const installCmd =
+    `iwr ${RELEASES_BASE}/aether-cli-${VERSION}-x86_64-pc-windows-msvc.zip -OutFile aether-cli.zip; Expand-Archive aether-cli.zip`;
 
   const platforms = [
     { label: "macOS (arm64)", key: "darwin-arm64", file: `aether-cli-${VERSION}-aarch64-apple-darwin.tar.gz` },

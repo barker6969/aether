@@ -1,23 +1,17 @@
 import React, { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { Download, Monitor, ExternalLink, Apple } from "lucide-react";
+import { DESKTOP_VERSION as VERSION, DESKTOP_RELEASES_BASE as RELEASES_BASE } from "../lib/releases";
 
 // Standalone download popover for the native Aether Repair Tool desktop app
 // (.msi for Windows, .dmg for macOS, .AppImage for Linux). Points at the
 // GitHub Releases artefacts produced by .github/workflows/aether-desktop-release.yml.
 //
-// The releases URL is configurable via REACT_APP_GITHUB_RELEASES_URL so you can
-// flip it on the first time you `git tag desktop-v0.1.0 && git push --tags`.
+// Version + base URL come from /lib/releases.js — flip them there when CI
+// bumps the version (or via REACT_APP_GITHUB_RELEASES_URL env override).
 export const DownloadDesktopButton = ({ variant = "compact" }) => {
   const { pushLog } = useApp();
   const [open, setOpen] = useState(false);
-
-  // Base URL example: https://github.com/aether-labs/aether/releases/latest/download
-  const RELEASES_BASE =
-    process.env.REACT_APP_GITHUB_RELEASES_URL ||
-    "https://github.com/aether-labs/aether/releases/latest/download";
-
-  const VERSION = "0.1.0";
 
   const builds = [
     {
