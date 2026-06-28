@@ -2,6 +2,24 @@
 
 ## 2026-02-23 · Desktop CI green + Tauri wrapper shipped
 
+### Path A — Real device repair via mtkclient subprocess wrapper (Feb 23, evening)
+**Aether is no longer a stub — it actually repairs MTK devices.**
+
+- **`aether-cli/src/mtkclient.rs` (NEW)** — Subprocess wrapper around `python -m mtkclient` (https://github.com/bkerler/mtkclient — GPL-3.0). Streams stdout/stderr line-by-line via Tokio mpsc channel. Subprocess invocation pattern keeps Aether outside the GPL derivative-work boundary (`mere aggregation` per FSF guidance).
+- **`aether-cli/src/exploits/{frp,imei,bootloader,info}.rs`** — Converted from stubs to real implementations that shell out to mtkclient:
+  - `frp.rs` → `mtkclient e frp` (erase FRP partition)
+  - `imei.rs` → `mtkclient w imei <imei1> [imei2]` (with Luhn validation + legal warning)
+  - `bootloader.rs` → `mtkclient da seccfg unlock`
+  - `info.rs` → `mtkclient printgpt`
+- **`aether-cli/src/bridge.rs` (REWRITTEN)** — Converted raw TCP newline-JSON to real **WebSocket via tokio-tungstenite**. Browser `new WebSocket()` now connects directly. New event-streaming protocol: long-running jobs return `{job_id, status:"started"}` immediately, then push `event` notifications with each line of mtkclient output. Capabilities advertised: `mtk.frp_bypass`, `mtk.repair_imei`, `mtk.unlock_bootloader`, `mtk.erase_userdata`, `mtk.read_info`, `devices`, `info`.
+- **`aether-cli/src/main.rs`** — Added `setup` subcommand (`pip install --user mtkclient`) + `doctor` subcommand (verify install).
+- **`aether-cli/Cargo.toml`** — Added `tokio-tungstenite` + `futures-util` + tokio `process`/`io-util`/`net`/`sync` features.
+- **`aether-cli/NOTICE.md` (NEW)** — GPL-3.0 attribution, IMEI legal warning, trademark notices.
+- **`frontend/src/hooks/useCliBridge.js`** — New `runJob(method, params, onEvent)` API with job_id event subscription map. Auto-reconnect every 5s. Gates connection behind `localStorage.aether.bridge.enabled === "1"`.
+- **`frontend/src/context/AppContext.jsx`** — `runAction` now prefers `cliBridge.runJob()` when the bridge is connected (streams real mtkclient output to console); falls back to `ACTION_LOG_TEMPLATES` demo simulation when offline. Console label: `EXECUTING (LIVE):` vs `EXECUTING (DEMO):`.
+- **Verified end-to-end via Python WebSocket smoke test**: bridge v2 advertises 7 capabilities, `mtk.frp_bypass` returns job_id immediately, streams stderr ("mtkclient not installed") + done event with exit_code=1. Frontend regression test (iteration_5) = 100% pass on all 10 items.
+- **User workflow now**: install `.msi` → `aether-cli setup` (one-time, installs mtkclient via pip) → plug in phone in BROM mode → click Bypass FRP in dashboard → real FRP partition erased.
+
 ### Polish pass — P2 bug fixes (Feb 23, late)
 - **Sidebar mobile drawer** — was always 240px regardless of viewport; squeezed mobile content to ~135px and caused hero card title to wrap letter-by-letter. Now hides off-screen below `lg` (1024px), hamburger (top-left, `lg:hidden`) toggles a drawer with backdrop, auto-closes on route change. Verified at 375 / 768 / 1024 / 1920px viewports.
 - **Form error accessibility** — Login + Signup error elements now have `role="alert"` + `className="error"` so screen readers + automated test selectors pick them up.
