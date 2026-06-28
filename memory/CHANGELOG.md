@@ -2,6 +2,14 @@
 
 ## 2026-02-23 · Desktop CI green + Tauri wrapper shipped
 
+### Polish pass — P2 bug fixes (Feb 23, late)
+- **Sidebar mobile drawer** — was always 240px regardless of viewport; squeezed mobile content to ~135px and caused hero card title to wrap letter-by-letter. Now hides off-screen below `lg` (1024px), hamburger (top-left, `lg:hidden`) toggles a drawer with backdrop, auto-closes on route change. Verified at 375 / 768 / 1024 / 1920px viewports.
+- **Form error accessibility** — Login + Signup error elements now have `role="alert"` + `className="error"` so screen readers + automated test selectors pick them up.
+- **Shared release constants** — `/app/frontend/src/lib/releases.js` centralizes `DESKTOP_VERSION`, `CLI_VERSION`, `DESKTOP_RELEASES_BASE`, `CLI_RELEASES_BASE`. `DownloadDesktopButton`, `DownloadCliButton`, `GetDesktopHeroCard` all import from it — single source of truth on version bumps.
+- **Replaced broken `get.aether.sh/cli.sh`** install command in `DownloadCliButton` with a real PowerShell one-liner that downloads the actual Windows zip from the GitHub Release.
+- **GetDesktopHeroCard responsive layout** — hero card now uses `flex-col md:flex-row` with mobile-first stacking and full-width CTA below md.
+- Verified by testing_agent_v3_fork — iteration_4 = 100% pass (4 viewports × 4 regressions).
+
 ### aether-cli v0.1.0 ship-readiness (Feb 23)
 - Fixed Rust borrow-checker bug in `bridge.rs` — `RpcError` held a `&str` reference to a `String` dropped mid-match arm. Switched to owned `String`. Binary compiles clean (`cargo build --release` 13s, 1.5 MB stripped).
 - Verified runtime: `--help`, `--version`, `serve` all functional.
