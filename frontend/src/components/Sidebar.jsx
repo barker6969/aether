@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Cpu,
@@ -11,6 +11,8 @@ import {
   Coins,
   BookOpen,
   ShoppingCart,
+  Menu,
+  X,
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useAuth } from "../context/AuthContext";
@@ -36,13 +38,56 @@ export const Sidebar = () => {
   const localCredits = useApp().credits;
   const credits = user?.credits ?? localCredits;
   const [buyOpen, setBuyOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
+
+  // Close the mobile drawer whenever the user navigates to a new route.
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   return (
     <>
+      {/* Hamburger — visible only below lg (desktop sidebar layout). Sits in
+          the top-left corner over the main content so it never collides with
+          WindowChrome. */}
+      <button
+        data-testid="sidebar-mobile-toggle"
+        onClick={() => setMobileOpen(true)}
+        className="lg:hidden fixed top-12 left-2 z-30 w-9 h-9 flex items-center justify-center border border-white/15 bg-[#070709]/95 backdrop-blur text-white/70 hover:text-[#00FF41] hover:border-[#00FF41]/40 transition-colors"
+        aria-label="Open navigation"
+      >
+        <Menu className="w-4 h-4" />
+      </button>
+
+      {/* Mobile drawer backdrop */}
+      {mobileOpen && (
+        <div
+          data-testid="sidebar-mobile-backdrop"
+          className="lg:hidden fixed inset-0 bg-black/70 z-40"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
       <aside
         data-testid="app-sidebar"
-        className="w-60 flex-shrink-0 bg-[#070709] border-r border-white/10 flex flex-col"
+        className={`
+          w-60 flex-shrink-0 bg-[#070709] border-r border-white/10 flex flex-col
+          fixed inset-y-0 left-0 z-50 transition-transform duration-200
+          lg:relative lg:translate-x-0 lg:transition-none
+          ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+        `}
       >
+        {/* Mobile close button — only inside the drawer */}
+        <button
+          data-testid="sidebar-mobile-close"
+          onClick={() => setMobileOpen(false)}
+          className="lg:hidden absolute top-3 right-3 w-7 h-7 flex items-center justify-center text-white/50 hover:text-white transition-colors"
+          aria-label="Close navigation"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
         <div className="px-5 py-5 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 border border-[#00FF41]/40 bg-black flex items-center justify-center relative overflow-hidden">
