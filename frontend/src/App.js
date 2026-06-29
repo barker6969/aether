@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import MTKService from "./pages/MTKService";
 import QualcommService from "./pages/QualcommService";
 import IPhoneService from "./pages/IPhoneService";
+import SamsungService from "./pages/SamsungService";
 import Logs from "./pages/Logs";
 import Pricing from "./pages/Pricing";
 import Settings from "./pages/Settings";
@@ -38,6 +39,7 @@ function AppShell() {
               <Route path="/mtk" element={<MTKService />} />
               <Route path="/qualcomm" element={<QualcommService />} />
               <Route path="/iphone" element={<IPhoneService />} />
+              <Route path="/samsung" element={<SamsungService />} />
               <Route path="/logs" element={<Logs />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/docs" element={<DocsHub />} />

@@ -157,3 +157,14 @@ export const IPHONE_ACTIONS = [
   { key: "passcode_recover",  label: "Passcode Recovery",  icon: "Lock",         danger: true,  testid: "iphone-action-passcode", cost: "30 Credits" },
   { key: "trust_audit",       label: "Trust Cache Audit",  icon: "ShieldCheck",  danger: false, testid: "iphone-action-trust",    cost: "10 Credits" },
 ];
+
+// Samsung — Heimdall (Odin protocol) operations.
+// `factory_reset` is the headline action: erases USERDATA partition, which
+// drops the device to its setup-wizard state. Works on Galaxy S9 / Note 9
+// and older A-series; newer Knox 3.x models may reject the write.
+export const SAMSUNG_ACTIONS = [
+  { key: "samsung_detect",        label: "Detect Device",      icon: "Search",       danger: false, testid: "action-samsung-detect",  cost: "Free" },
+  { key: "samsung_read_pit",      label: "Read PIT Table",     icon: "Hash",         danger: false, testid: "action-samsung-pit",     cost: "Free" },
+  { key: "samsung_factory_reset", label: "Factory Reset",      icon: "Eraser",       danger: true,  testid: "action-samsung-reset",   cost: "15 Credits" },
+  { key: "bypass_frp",            label: "Bypass FRP",         icon: "ShieldOff",    danger: false, testid: "action-samsung-frp",     cost: "20 Credits" },
+];

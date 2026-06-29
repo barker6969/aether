@@ -18,6 +18,24 @@ Aether CLI shells out to the following open-source tools as **separate processes
   `aether-cli setup` (runs `pip install --user mtkclient`).
 - Full license text: https://www.gnu.org/licenses/gpl-3.0.txt
 
+## Heimdall (Samsung Odin clone)
+
+- **Source:** https://gitlab.com/BenjaminDobell/Heimdall
+- **License:** LGPL-3.0
+- **How Aether uses it:** Aether CLI invokes the `heimdall` binary as a
+  subprocess (for `samsung.detect`, `samsung.read_pit`, `samsung.factory_reset`,
+  and partition erase). No Heimdall code is embedded, linked, or modified.
+- Subprocess invocation is **mere aggregation** under both GPL and LGPL — see
+  the same FSF guidance linked above.
+- Users must install Heimdall themselves:
+  - Windows: https://glassechidna.com.au/heimdall/ (run the .msi, reboot, then
+    bind the libusbK driver via Zadig)
+  - macOS: `brew install heimdall`
+  - Linux: `sudo apt install heimdall-flash`
+- Known limitations (Knox-imposed): Heimdall writes succeed on Galaxy S9 /
+  Note 9 / older A-series. Newer Knox 3.x devices (S10+) often reject
+  partition writes without Samsung-signed firmware. See `/app/aether-cli/src/heimdall.rs`.
+
 ---
 
 ## Legal — IMEI changes

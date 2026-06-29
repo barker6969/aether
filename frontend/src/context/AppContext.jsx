@@ -10,10 +10,13 @@ export const useApp = () => useContext(AppContext);
 // mtkclient output back as log lines). When the bridge is offline we fall
 // back to the deterministic demo simulation in mockData.js.
 const BRIDGE_METHODS = {
-  bypass_frp:        { method: "mtk.frp_bypass" },
-  unlock_bootloader: { method: "mtk.unlock_bootloader" },
-  erase_userdata:    { method: "mtk.erase_userdata" },
-  read_info:         { method: "mtk.read_info" },
+  bypass_frp:             { method: "mtk.frp_bypass" },
+  unlock_bootloader:      { method: "mtk.unlock_bootloader" },
+  erase_userdata:         { method: "mtk.erase_userdata" },
+  read_info:              { method: "mtk.read_info" },
+  samsung_detect:         { method: "samsung.detect" },
+  samsung_read_pit:       { method: "samsung.read_pit" },
+  samsung_factory_reset:  { method: "samsung.factory_reset" },
   // repair_imei requires user input (an IMEI); handled separately by a future modal.
 };
 

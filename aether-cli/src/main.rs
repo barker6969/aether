@@ -13,6 +13,7 @@ mod exploits;
 mod usb;
 mod bridge;
 mod mtkclient;
+mod heimdall;
 
 use clap::{Parser, Subcommand};
 use colored::Colorize;
@@ -77,6 +78,14 @@ enum Command {
         #[arg(default_value = "auto")]
         port: String,
     },
+    /// Detect a Samsung device in Download Mode via Heimdall.
+    SamsungDetect,
+    /// Read the Samsung device's Partition Information Table (PIT).
+    SamsungReadPit,
+    /// Real factory reset on a Samsung device — erases USERDATA + CACHE + METADATA via Heimdall.
+    /// Phone must be in Download Mode (Vol-Down + Bixby + Power, then Vol-Up).
+    /// Works on Galaxy S9 / Note 9 / older A-series. Newer Knox 3.x models may reject writes.
+    SamsungFactoryReset,
     /// Run a local WebSocket bridge so the Aether web dashboard can talk to attached devices.
     Serve {
         /// Bind address.
@@ -134,6 +143,9 @@ async fn main() -> anyhow::Result<()> {
             exploits::imei::repair_imei(&port, &imei1, imei2.as_deref()).await?
         }
         Command::UnlockBootloader { port } => exploits::bootloader::unlock(&port).await?,
+        Command::SamsungDetect => exploits::samsung::detect().await?,
+        Command::SamsungReadPit => exploits::samsung::read_pit().await?,
+        Command::SamsungFactoryReset => exploits::samsung::factory_reset().await?,
         Command::Serve { addr } => bridge::serve(&addr).await?,
         Command::Setup => {
             println!("  {} installing mtkclient via pip (requires Python 3.8+) ...", "→".bright_green());
@@ -145,7 +157,11 @@ async fn main() -> anyhow::Result<()> {
         Command::Doctor => {
             match mtkclient::check_mtkclient() {
                 Ok(v) => println!("  {} mtkclient {}", "✓".bright_green(), v.bright_white()),
-                Err(e) => println!("  {} {}", "✗".bright_red(), e),
+                Err(e) => println!("  {} mtkclient: {}", "✗".bright_red(), e),
+            }
+            match heimdall::check_heimdall() {
+                Ok(v) => println!("  {} {}", "✓".bright_green(), v.bright_white()),
+                Err(e) => println!("  {} heimdall: {}", "✗".bright_red(), e),
             }
         }
     }

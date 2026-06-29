@@ -23,6 +23,7 @@ use tokio::net::TcpListener;
 use tokio::sync::Mutex;
 use tokio_tungstenite::tungstenite::Message;
 
+use crate::heimdall;
 use crate::mtkclient;
 
 const CLI_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -161,6 +162,21 @@ fn new_job_id() -> String {
 /// job_id so the dashboard can correlate the events with the original
 /// request.
 fn spawn_mtkclient_job(args: Vec<String>, write: WsSink) -> String {
+    spawn_job(args, write, JobTool::Mtkclient)
+}
+
+/// Spawn a heimdall invocation. Same protocol as spawn_mtkclient_job.
+fn spawn_heimdall_job(args: Vec<String>, write: WsSink) -> String {
+    spawn_job(args, write, JobTool::Heimdall)
+}
+
+#[derive(Clone, Copy)]
+enum JobTool {
+    Mtkclient,
+    Heimdall,
+}
+
+fn spawn_job(args: Vec<String>, write: WsSink, tool: JobTool) -> String {
     let job_id = new_job_id();
     let jid = job_id.clone();
     tokio::spawn(async move {
@@ -168,7 +184,10 @@ fn spawn_mtkclient_job(args: Vec<String>, write: WsSink) -> String {
         let args_owned = args;
         let run_task = tokio::spawn(async move {
             let refs: Vec<&str> = args_owned.iter().map(|s| s.as_str()).collect();
-            mtkclient::run_mtkclient_streaming(&refs, tx).await
+            match tool {
+                JobTool::Mtkclient => mtkclient::run_mtkclient_streaming(&refs, tx).await,
+                JobTool::Heimdall => heimdall::run_heimdall_streaming(&refs, tx).await,
+            }
         });
         while let Some(sl) = rx.recv().await {
             send_json(
@@ -214,11 +233,13 @@ async fn dispatch(method: &str, params: &Value, write: &WsSink) -> Result<Value,
     match method {
         "hello" => {
             let mtk_version = mtkclient::check_mtkclient().ok();
+            let heimdall_version = heimdall::check_heimdall().ok();
             Ok(json!({
                 "name": "aether-cli",
                 "version": CLI_VERSION,
                 "bridge": BRIDGE_VERSION,
                 "mtkclient": mtk_version,
+                "heimdall": heimdall_version,
                 "capabilities": [
                     "devices",
                     "info",
@@ -226,7 +247,10 @@ async fn dispatch(method: &str, params: &Value, write: &WsSink) -> Result<Value,
                     "mtk.repair_imei",
                     "mtk.unlock_bootloader",
                     "mtk.erase_userdata",
-                    "mtk.read_info"
+                    "mtk.read_info",
+                    "samsung.detect",
+                    "samsung.read_pit",
+                    "samsung.factory_reset"
                 ],
             }))
         }
@@ -269,9 +293,40 @@ async fn dispatch(method: &str, params: &Value, write: &WsSink) -> Result<Value,
             Ok(json!({ "job_id": job_id, "status": "started" }))
         }
 
+        // ─── Samsung (Heimdall) operations ────────────────────────────────
+        "samsung.detect" => {
+            let job_id = spawn_heimdall_job(vec!["detect".into()], write.clone());
+            Ok(json!({ "job_id": job_id, "status": "started" }))
+        }
+        "samsung.read_pit" => {
+            let job_id = spawn_heimdall_job(vec!["print-pit".into()], write.clone());
+            Ok(json!({ "job_id": job_id, "status": "started" }))
+        }
+        "samsung.factory_reset" => {
+            // Erase USERDATA — the core factory-reset operation.
+            // CACHE and METADATA are handled by separate calls so the
+            // dashboard can stream them individually; for the
+            // single-button UX we fire just USERDATA here (the largest /
+            // most user-facing partition).
+            let job_id = spawn_heimdall_job(
+                vec!["erase".into(), "--partition".into(), "USERDATA".into()],
+                write.clone(),
+            );
+            Ok(json!({ "job_id": job_id, "status": "started" }))
+        }
+
         "doctor" => match mtkclient::check_mtkclient() {
-            Ok(v) => Ok(json!({ "mtkclient": v, "ok": true })),
-            Err(e) => Ok(json!({ "mtkclient": null, "ok": false, "error": e.to_string() })),
+            Ok(v) => Ok(json!({
+                "mtkclient": v,
+                "heimdall": heimdall::check_heimdall().ok(),
+                "ok": true
+            })),
+            Err(e) => Ok(json!({
+                "mtkclient": null,
+                "heimdall": heimdall::check_heimdall().ok(),
+                "ok": false,
+                "error": e.to_string()
+            })),
         },
 
         other => Err(format!("unknown method: {}", other)),
